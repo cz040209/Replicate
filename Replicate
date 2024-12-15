@@ -10,7 +10,7 @@ import pytesseract  # For OCR (Image to Text)
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\chenz\Downloads\tesseract-ocr-w64-setup-5.5.0.20241111\tesseract.exe'
 
 # Your Replicate API token
-REPLICATE_API_TOKEN = "your_replicate_api_token"  # Replace with your token
+REPLICATE_API_TOKEN = "r8_7jHKZQM9VHpRiGGB1HOIQJUqvcidzDz41avpZ"  
 
 # Set up the replicate client
 client = replicate.Client(api_token=REPLICATE_API_TOKEN)
