@@ -1,5 +1,6 @@
 import os
 import streamlit as st
+import replicate
 import speech_recognition as sr  # For audio-to-text functionality
 from PIL import Image
 import pytesseract  # For OCR (Image to Text)
