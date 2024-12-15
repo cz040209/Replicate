@@ -1,3 +1,5 @@
+pip install pdfplumber
+
 import os
 import streamlit as st
 import pdfplumber
@@ -5,8 +7,6 @@ import replicate  # Replicate platform
 import speech_recognition as sr  # For audio-to-text functionality
 from PIL import Image
 import pytesseract  # For OCR (Image to Text)
-
-pip install pdfplumber
 
 # Set the path to the tesseract executable
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\chenz\Downloads\tesseract-ocr-w64-setup-5.5.0.20241111\tesseract.exe'
