@@ -1,5 +1,3 @@
-pip install pdfplumber
-
 import os
 import streamlit as st
 import pdfplumber
