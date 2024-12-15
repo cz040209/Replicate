@@ -1,10 +1,10 @@
 import os
 import streamlit as st
-import pdfplumber
 import replicate  # Replicate platform
 import speech_recognition as sr  # For audio-to-text functionality
 from PIL import Image
 import pytesseract  # For OCR (Image to Text)
+import fitz  # PyMuPDF for PDF text extraction
 
 # Set the path to the tesseract executable
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\chenz\Downloads\tesseract-ocr-w64-setup-5.5.0.20241111\tesseract.exe'
@@ -68,10 +68,13 @@ def summarize_text(text):
     final_summary = " ".join(summaries)
     return final_summary if summaries else "No summary available."
 
-# Function to extract text from PDF
+# Function to extract text from PDF using PyMuPDF
 def extract_text_from_pdf(pdf_file):
-    with pdfplumber.open(pdf_file) as pdf:
-        return " ".join(page.extract_text() for page in pdf.pages if page.extract_text())
+    with fitz.open(pdf_file) as pdf:
+        text = ""
+        for page in pdf:
+            text += page.get_text("text")  # Extract text
+    return text
 
 # Function for Audio-to-Text (Speech Recognition)
 def audio_to_text(audio_file):
