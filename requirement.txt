@@ -1,0 +1,7 @@
+streamlit
+replicate
+speechrecognition
+pillow
+pytesseract
+fitz
+PyMuPDF
