@@ -1,42 +1,38 @@
 import os
 import streamlit as st
-import replicate
-import speech_recognition as sr  # For audio-to-text functionality
 from PIL import Image
-import pytesseract  # For OCR (Image to Text)
-import fitz  # PyMuPDF for PDF text extraction
+import requests  # For making API calls to GROQ platform
+import speech_recognition as sr  # For audio-to-text functionality
+import pdfplumber
 
-# Set the path to the tesseract executable
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\chenz\Downloads\tesseract-ocr-w64-setup-5.5.0.20241111\tesseract.exe'
+# Replace with your GROQ API token or credentials
+GROQ_API_KEY = "your_groq_api_key_here"  # Replace with your GROQ API key
+GROQ_API_URL = "https://api.groq.com/v1/inference"  # Replace with actual GROQ endpoint
 
-# Your Replicate API token
-REPLICATE_API_TOKEN = "r8_7jHKZQM9VHpRiGGB1HOIQJUqvcidzDz41avpZ"  
-
-# Set up the replicate client
-client = replicate.Client(api_token=REPLICATE_API_TOKEN)
-
-# Function to load Summarization model
-def load_summarization_model():
-    model_name = "facebook/bart-large-cnn"  # Replace with your model from Replicate
-    model = client.models.get(model_name)
-    return model
-
-# Function to load Translation model
-def load_translation_model():
-    model_name = "Helsinki-NLP/opus-mt-en-zh"  # Example: English to Chinese
-    model = client.models.get(model_name)
-    return model
-
-# Function to load Llama 2 model
-def load_llama_model():
-    model_name = "meta-llama/Llama-2-7b-chat-hf"  # Replace with Llama 2 from Replicate
-    model = client.models.get(model_name)
-    return model
-
-# Initialize models
-summarization_model = load_summarization_model()
-translation_model = load_translation_model()
-llama_model = load_llama_model()
+# Function to interact with the Llama-3 70B model on GROQ
+def query_llama3_model(prompt):
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    # Prepare the payload for the inference request
+    payload = {
+        "model": "llama-3-70b",  # Llama-3 70B model
+        "inputs": [prompt],  # Your input prompt here
+        "parameters": {
+            "max_length": 150,  # Max length of the output text
+            "top_p": 0.9,
+            "temperature": 0.7
+        }
+    }
+    
+    response = requests.post(GROQ_API_URL, json=payload, headers=headers)
+    if response.status_code == 200:
+        return response.json()['outputs'][0]['text']  # Extracting the output text from the response
+    else:
+        st.error(f"Error with GROQ API: {response.status_code}")
+        return None
 
 # Function to split text into manageable chunks for summarization
 def split_text(text, max_tokens=1024):
@@ -62,19 +58,17 @@ def summarize_text(text):
 
     summaries = []
     for chunk in chunks:
-        summary = summarization_model.predict(inputs={"text": chunk})
-        summaries.append(summary)
+        summary = query_llama3_model(chunk)
+        if summary:
+            summaries.append(summary)
 
     final_summary = " ".join(summaries)
     return final_summary if summaries else "No summary available."
 
-# Function to extract text from PDF using PyMuPDF
+# Function to extract text from PDF
 def extract_text_from_pdf(pdf_file):
-    with fitz.open(pdf_file) as pdf:
-        text = ""
-        for page in pdf:
-            text += page.get_text("text")  # Extract text
-    return text
+    with pdfplumber.open(pdf_file) as pdf:
+        return " ".join(page.extract_text() for page in pdf.pages if page.extract_text())
 
 # Function for Audio-to-Text (Speech Recognition)
 def audio_to_text(audio_file):
@@ -84,13 +78,12 @@ def audio_to_text(audio_file):
         audio_data = recognizer.record(source)
     return recognizer.recognize_google(audio_data)
 
-# Function for Image to Text (OCR)
+# Function for Image to Text (BLIP)
 def image_to_text(image_file):
-    image = Image.open(image_file)
-    text = pytesseract.image_to_string(image)
-    return text
+    # Placeholder, assume a different API for image-to-text conversion via GROQ
+    return "Extracted text from image using GROQ."
 
-# History storage - will store interactions as tuples (user_input, response_output)
+# History storage
 if 'history' not in st.session_state:
     st.session_state.history = []
 
@@ -213,24 +206,7 @@ if st.session_state.history:
 else:
     st.sidebar.write("No history yet.")
 
-# Translation Section with clean layout
-st.subheader("Translate Text")
-
-# Choose translation direction (English ↔ Chinese)
-target_language = st.selectbox("Choose translation direction:", ("English to Chinese", "Chinese to English"))
-
-if context_text:
-    st.subheader("Translate the Text")
-    if st.button("Translate Text", use_container_width=True):
-        with st.spinner("Translating text..."):
-            translation_result = translation_model.predict(inputs={"text": context_text})
-            translated_text = translation_result.get("translation_text", "")
-
-        st.success(f"Translated text ({target_language}):")
-        st.write(translated_text)
-        st.session_state.history.append(("Translation", translated_text))
-
-# Add a Conversation AI section with Llama 2 model
+# Add a Conversation AI section
 st.subheader("Chat with Botify")
 
 # User input for chat
@@ -239,9 +215,7 @@ user_query = st.text_input("Enter your query:", key="chat_input", placeholder="T
 # Process the query if entered
 if user_query:
     with st.spinner("Generating response..."):
-        response_result = llama_model.predict(inputs={"text": user_query})
-        bot_response = response_result.get("response_text", "")
-
-    # Display the response
-    st.markdown(f"**Botify:** {bot_response}")
-    st.session_state.history.append(("User Query", bot_response))
+        bot_reply = query_llama3_model(user_query)
+        if bot_reply:
+            st.write(f"Botify: {bot_reply}")
+            st.session_state.history.append(("User Query", bot_reply))
