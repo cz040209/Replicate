@@ -1,7 +1,8 @@
 streamlit
-replicate
+requests
+pdfplumber
+torch
+transformers
+Pillow
 speechrecognition
-pillow
-pytesseract
-fitz
-PyMuPDF
+marianmt
