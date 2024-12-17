@@ -6,8 +6,8 @@ import speech_recognition as sr  # For audio-to-text functionality
 import pdfplumber
 
 # Replace with your GROQ API token or credentials
-GROQ_API_KEY = "your_groq_api_key_here"  # Replace with your GROQ API key
-GROQ_API_URL = "https://api.groq.com/v1/inference"  # Replace with actual GROQ endpoint
+GROQ_API_KEY = "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"  # Replace with your GROQ API key
+GROQ_API_URL = "https://api.groq.com/v1/models/llama-3-70b/inference"  # Replace with actual GROQ endpoint
 
 # Function to interact with the Llama-3 70B model on GROQ
 def query_llama3_model(prompt):
