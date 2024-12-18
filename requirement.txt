@@ -4,6 +4,6 @@ pdfplumber
 torch
 transformers
 Pillow
-
+speechrecognition
 marianmt
 pyaudio
