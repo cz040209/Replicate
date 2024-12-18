@@ -6,4 +6,3 @@ transformers
 Pillow
 marianmt
 pyaudio
-SpeechRecognition
