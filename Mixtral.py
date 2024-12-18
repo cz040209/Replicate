@@ -1,8 +1,8 @@
 import requests
-import os
+import streamlit as st
 
-# Set up Groq API Key securely
-api_key = os.getenv("GROQ_API_KEY", "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")  # Use environment variable for security
+# Set up Groq API Key securely from Streamlit secrets
+api_key = st.secrets["groq_api"]["api_key"]
 
 # Endpoint for Groq Chat Completions API
 url = "https://api.groq.com/openai/v1/chat/completions"
