@@ -13,7 +13,7 @@ headers = {
 
 # Model to use: Mixtral-8x7B-32768
 data = {
-    "model": "mixtral-8x7b-32768",  # Specify the Mixtral model
+    "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",  # Specify the Mixtral model
     "messages": [
         {"role": "system", "content": "You are a helpful assistant."},  # System message (optional)
         {"role": "user", "content": "What is the capital of France?"}  # User query
