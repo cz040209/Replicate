@@ -1,6 +1,8 @@
 import sys
 import streamlit as st
+
 st.write(f"Python version used by Streamlit: {sys.version}")
+st.write(f"Python executable used by Streamlit: {sys.executable}")
 
 
 import os
