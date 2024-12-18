@@ -2,7 +2,7 @@ import requests
 import os
 
 # Set up Groq API Key securely
-api_key = os.getenv("GROQ_API_KEY", "your_default_api_key_here")  # Use environment variable for security
+api_key = os.getenv("GROQ_API_KEY", "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")  # Use environment variable for security
 
 # Endpoint for Groq Chat Completions API
 url = "https://api.groq.com/openai/v1/chat/completions"
