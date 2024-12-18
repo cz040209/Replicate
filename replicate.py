@@ -1,8 +1,9 @@
+# botify_app.py
 import os
 import streamlit as st
 import pdfplumber
 import replicate
-import speech_recognition as sr  # For audio-to-text functionality
+import speech_recognition as sr
 from PIL import Image
 from gtts import gTTS
 
