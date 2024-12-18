@@ -1,38 +1,56 @@
 import os
 import streamlit as st
-from PIL import Image
-import requests  # For making API calls to GROQ platform
-import speech_recognition as sr  # For audio-to-text functionality
 import pdfplumber
+import replicate
+import speech_recognition as sr  # For audio-to-text functionality
+from PIL import Image
+from gtts import gTTS
 
-# Replace with your GROQ API token or credentials
-GROQ_API_KEY = "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"  # Replace with your GROQ API key
-GROQ_API_URL = "https://api.groq.com/v1/models/llama-3-70b/inference"  # Replace with actual GROQ endpoint
+# Replicate API Token (use your token)
+REPLICATE_API_TOKEN = "r8_6yrZKDPuvfO9XbyZnbqOXFji9F8jIKd2gI9jk"  # Replace with your actual Replicate API token
 
-# Function to interact with the Llama-3 70B model on GROQ
-def query_llama3_model(prompt):
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    # Prepare the payload for the inference request
-    payload = {
-        "model": "llama-3-70b",  # Llama-3 70B model
-        "inputs": [prompt],  # Your input prompt here
-        "parameters": {
-            "max_length": 150,  # Max length of the output text
-            "top_p": 0.9,
-            "temperature": 0.7
-        }
-    }
-    
-    response = requests.post(GROQ_API_URL, json=payload, headers=headers)
-    if response.status_code == 200:
-        return response.json()['outputs'][0]['text']  # Extracting the output text from the response
+# Set up Replicate client
+replicate_client = replicate.Client(api_token=REPLICATE_API_TOKEN)
+
+# Set up the BLIP model for image-to-text (still using your existing function)
+def load_blip_model():
+    processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+    model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+    return processor, model
+
+# Function for Text-to-Speech (Text to Audio)
+def text_to_speech(text):
+    tts = gTTS(text=text, lang='en')  # You can change language if needed
+    tts.save("response.mp3")  # Save the speech as an audio file
+    # Provide a link to download or play the audio
+    st.audio("response.mp3", format="audio/mp3")
+    os.remove("response.mp3")  # Clean up the temporary audio file
+
+# Function to load Meta-Llama-3-70B for summarization and conversation
+def load_llama_model():
+    model = replicate_client.models.get("meta/meta-llama-3-70b")
+    return model
+
+# Load Summarization Model and Tokenizer
+@st.cache_resource
+def load_summarization_model(model_choice="BART"):
+    if model_choice == "BART":
+        model_name = "facebook/bart-large-cnn"  # BART model for summarization
+    elif model_choice == "T5":
+        model_name = "t5-large"  # T5 model for summarization
+    elif model_choice == "Llama3":
+        model_name = "meta-llama/Llama-3.3-70B-Instruct"  # Llama 3 model for summarization
     else:
-        st.error(f"Error with GROQ API: {response.status_code}")
-        return None
+        raise ValueError(f"Unsupported model choice: {model_choice}")
+    
+    # Use the selected model for summarization and conversation
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    if model_choice == "Llama3":
+        model = LlamaForCausalLM.from_pretrained(model_name)
+    else:
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+    return tokenizer, model
 
 # Function to split text into manageable chunks for summarization
 def split_text(text, max_tokens=1024):
@@ -51,16 +69,17 @@ def split_text(text, max_tokens=1024):
 
     return chunks
 
-# Function to summarize text
-def summarize_text(text):
-    max_tokens = 1024  # Token limit for the model
-    chunks = split_text(text, max_tokens)
-
+# Function to summarize text using Meta-Llama-3-70B
+def summarize_text_with_llama(text):
+    model = load_llama_model()
+    chunks = split_text(text)
+    
     summaries = []
     for chunk in chunks:
-        summary = query_llama3_model(chunk)
-        if summary:
-            summaries.append(summary)
+        # Call the Meta-Llama-3-70B model for summarization
+        response = model.predict(prompt=f"Summarize the following text: {chunk}")
+        summary = response["text"]
+        summaries.append(summary)
 
     final_summary = " ".join(summaries)
     return final_summary if summaries else "No summary available."
@@ -80,10 +99,14 @@ def audio_to_text(audio_file):
 
 # Function for Image to Text (BLIP)
 def image_to_text(image_file):
-    # Placeholder, assume a different API for image-to-text conversion via GROQ
-    return "Extracted text from image using GROQ."
+    processor, model = load_blip_model()
+    image = Image.open(image_file).convert("RGB")
+    inputs = processor(images=image, return_tensors="pt")
+    out = model.generate(**inputs)
+    description = processor.decode(out[0], skip_special_tokens=True)
+    return description
 
-# History storage
+# History storage - will store interactions as tuples (user_input, response_output)
 if 'history' not in st.session_state:
     st.session_state.history = []
 
@@ -138,7 +161,6 @@ context_text = ""
 # Handling different options
 if option == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF", type="pdf", label_visibility="collapsed")
-
     if uploaded_file:
         with st.spinner("Extracting text from PDF..."):
             pdf_text = extract_text_from_pdf(uploaded_file)
@@ -151,12 +173,10 @@ if option == "Upload PDF":
             st.subheader("Summarize the PDF Content")
             if st.button("Summarize PDF", use_container_width=True):
                 with st.spinner("Summarizing text..."):
-                    summary = summarize_text(pdf_text)
+                    summary = summarize_text_with_llama(pdf_text)
                 st.success("Summary generated!")
                 st.write(summary)
                 st.session_state.history.append(("PDF Upload", summary))
-        else:
-            st.error("Failed to extract text. Please check your PDF file.")
 
 elif option == "Enter Text Manually":
     manual_text = st.text_area("Enter your text below:", height=200)
@@ -166,16 +186,13 @@ elif option == "Enter Text Manually":
         st.subheader("Summarize the Entered Text")
         if st.button("Summarize Text", use_container_width=True):
             with st.spinner("Summarizing text..."):
-                summary = summarize_text(manual_text)
+                summary = summarize_text_with_llama(manual_text)
             st.success("Summary generated!")
             st.write(summary)
             st.session_state.history.append(("Manual Text", summary))
-    else:
-        st.info("Please enter some text to summarize.")
 
 elif option == "Upload Audio":
     audio_file = st.file_uploader("Upload an audio file", type=["wav", "mp3", "flac"], label_visibility="collapsed")
-
     if audio_file:
         with st.spinner("Transcribing audio to text..."):
             try:
@@ -188,7 +205,6 @@ elif option == "Upload Audio":
 
 elif option == "Upload Image":
     image_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
-
     if image_file:
         with st.spinner("Extracting text from image..."):
             image_text = image_to_text(image_file)
@@ -212,10 +228,17 @@ st.subheader("Chat with Botify")
 # User input for chat
 user_query = st.text_input("Enter your query:", key="chat_input", placeholder="Type something to chat!")
 
-# Process the query if entered
 if user_query:
     with st.spinner("Generating response..."):
-        bot_reply = query_llama3_model(user_query)
-        if bot_reply:
-            st.write(f"Botify: {bot_reply}")
-            st.session_state.history.append(("User Query", bot_reply))
+        # Use Meta-Llama-3-70B for chat responses
+        model = load_llama_model()
+
+        # Tokenize user query and generate response
+        response = model.predict(prompt=f"Respond to this query: {user_query}")
+        bot_reply = response["text"]
+
+    st.write(f"Botify: {bot_reply}")
+    st.session_state.history.append(("User Query", bot_reply))
+
+    # Convert the bot's reply to speech
+    text_to_speech(bot_reply)  # Make the bot speak the response
