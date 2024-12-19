@@ -8,5 +8,4 @@ pytz
 python-dotenv
 openai
 pydub
-easyocr
-numpy
+
