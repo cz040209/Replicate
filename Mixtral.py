@@ -317,6 +317,10 @@ if content:
             except requests.exceptions.RequestException as e:
                 st.write(f"An error occurred: {e}")
 
+        # Continuously prompt the user for more questions
+        st.text_input("Ask another question:", key="continue_question")
+        st.experimental_rerun()
+
 # Display interaction history in the sidebar
 if st.session_state.history:
     st.sidebar.header("Interaction History")
