@@ -26,6 +26,30 @@ def extract_text_from_pdf(pdf_file):
         extracted_text += page.extract_text()
     return extracted_text
 
+# Function to Summarize the Text
+def summarize_text(text, model_id):
+    url = f"{base_url}/chat/completions"
+    data = {
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant. Summarize the following text:"},
+            {"role": "user", "content": text}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 300,
+        "top_p": 0.9
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content']
+        else:
+            return f"Error {response.status_code}: {response.text}"
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred: {e}"
+
 # Streamlit UI
 st.title("PDF Question-Answering Chatbot")
 
@@ -46,9 +70,16 @@ if uploaded_file:
     pdf_text = extract_text_from_pdf(uploaded_file)
     st.success("Text extracted successfully!")
 
-    # Display extracted text (Optional)
+    # Display extracted text with adjusted font size
     with st.expander("View Extracted Text"):
-        st.write(pdf_text)
+        st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
+
+    # Summarize the extracted text
+    if st.button("Summarize Text"):
+        st.write("Summarizing the text...")
+        summary = summarize_text(pdf_text, selected_model_id)
+        st.write("Summary:")
+        st.write(summary)
 
     # Step 2: User Input for Questions
     question = st.text_input("Ask a question about the PDF content:")
