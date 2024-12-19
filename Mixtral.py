@@ -1,3 +1,6 @@
+import os
+print(os.environ["PATH"])
+
 import requests
 import streamlit as st
 import PyPDF2
@@ -7,11 +10,6 @@ import os
 import pytesseract
 from PIL import Image
 import json
-
-import os
-print(os.environ["PATH"])
-
-
 
 # Set the path to the Tesseract executable
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
