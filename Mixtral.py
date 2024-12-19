@@ -12,8 +12,11 @@ headers = {
     "Content-Type": "application/json"
 }
 
-# Model ID
-model_id = "mixtral-8x7b-32768"
+# Available models
+available_models = {
+    "Mixtral 8x7b": "mixtral-8x7b-32768",
+    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile"
+}
 
 # Step 1: Function to Extract Text from PDF
 def extract_text_from_pdf(pdf_file):
@@ -23,8 +26,14 @@ def extract_text_from_pdf(pdf_file):
         extracted_text += page.extract_text()
     return extracted_text
 
-# Streamlit UI for Uploading PDF
+# Streamlit UI
 st.title("PDF Question-Answering Chatbot")
+
+# Model selection
+selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
+selected_model_id = available_models[selected_model_name]
+
+# File upload
 uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
 
 if uploaded_file:
@@ -44,7 +53,7 @@ if uploaded_file:
         # Use the extracted text and user question for Chat Completions
         url = f"{base_url}/chat/completions"
         data = {
-            "model": model_id,
+            "model": selected_model_id,
             "messages": [
                 {"role": "system", "content": "You are a helpful assistant. Use the following PDF content to answer the user's questions."},
                 {"role": "system", "content": pdf_text},
@@ -60,7 +69,7 @@ if uploaded_file:
             if response.status_code == 200:
                 result = response.json()
                 bot_response = result['choices'][0]['message']['content']
-                st.write(f"Bot: {bot_response}")
+                st.write(f"Bot ({selected_model_name}): {bot_response}")
             else:
                 st.error(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
