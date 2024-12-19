@@ -15,7 +15,7 @@ processor = BlipProcessor.from_pretrained("Salesforce/blip-2", use_auth_token=hf
 model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-2", use_auth_token=hf_token)
 
 # Custom CSS for a more premium look
-st.markdown("""
+st.markdown(""" 
     <style>
         .css-1d391kg {
             background-color: #1c1f24;  /* Dark background */
@@ -157,6 +157,9 @@ def transcribe_audio(deepgram_api_key, audio_file):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during transcription: {e}"
 
+# Initialize 'history' in session state
+if "history" not in st.session_state:
+    st.session_state.history = []
 
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
@@ -167,8 +170,7 @@ if input_method in ["Upload PDF", "Enter Text Manually"]:
     selected_model_id = available_models[selected_model_name]
 
 # Sidebar for interaction history
-if "history" not in st.session_state:
-    st.session_state.history = []
+# Ensure that 'history' is initialized (already handled above)
 
 # Initialize content variable
 content = ""
@@ -212,21 +214,20 @@ if input_method == "Upload PDF":
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
 
-            # Convert summary to audio in English (not translated)
-            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
-            tts.save("response.mp3")
-            st.audio("response.mp3", format="audio/mp3")
+            # Convert summary to speech
+            tts = gTTS(translated_summary, lang="en")
+            tts.save("summary.mp3")
+            st.audio("summary.mp3", format="audio/mp3")
 
 elif input_method == "Enter Text Manually":
-    manual_text = st.text_area("Enter your text manually:")
+    user_input = st.text_area("Enter text here")
+    if user_input:
+        content = user_input
 
-    if manual_text:
-        # Assign entered text to content for chat
-        content = manual_text
-
+        # Summarize the inputted text
         if st.button("Summarize Text"):
-            st.write("Summarizing the entered text...")
-            summary = summarize_text(manual_text, selected_model_id)
+            st.write("Summarizing the text...")
+            summary = summarize_text(user_input, selected_model_id)
             st.write("Summary:")
             st.write(summary)
 
@@ -235,95 +236,21 @@ elif input_method == "Enter Text Manually":
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
 
-            # Convert summary to audio in English (not translated)
-            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
-            tts.save("response.mp3")
-            st.audio("response.mp3", format="audio/mp3")
+            # Convert summary to speech
+            tts = gTTS(translated_summary, lang="en")
+            tts.save("summary.mp3")
+            st.audio("summary.mp3", format="audio/mp3")
 
-elif input_method == "Upload Audio":
-    uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
-
-    if uploaded_audio:
-        st.write("Audio file uploaded. Processing audio...")
-        # Use Deepgram for transcription
-        transcript = transcribe_audio(deepgram_api_key, uploaded_audio)
-        st.write("Transcription:")
-        st.write(transcript)
-
-if input_method == "Upload Image":
-    uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
-
-    if uploaded_image:
-        st.write("Image uploaded. Generating caption...")
-
-        # Open and process the image
-        image = Image.open(uploaded_image)
-        inputs = processor(images=image, return_tensors="pt")
-
-        # Generate caption using BLIP-2
-        output = model.generate(**inputs)
-        caption = processor.decode(output[0], skip_special_tokens=True)
-
-        st.write("Generated Caption:")
-        st.write(caption)
-
-
-# Step 2: User Input for Questions
+# Add to session state history
 if content:
-    question = st.text_input("Ask a question about the content:")
+    st.session_state.history.append({
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "input": content,
+        "language": selected_language
+    })
 
-    if question:
-        # Create interaction dictionary with timestamp
-        interaction = {
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "input_method": input_method,
-            "question": question,
-            "response": "",
-            "content_preview": content[:100] if content else "No content available"
-        }
-        # Add user question to history
-        st.session_state.history.append(interaction)
-
-        if content:
-            # Send the question and content to the API for response
-            url = f"{base_url}/chat/completions"
-            data = {
-                "model": selected_model_id,
-                "messages": [
-                    {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                    {"role": "system", "content": content},
-                    {"role": "user", "content": question}
-                ],
-                "temperature": 0.7,
-                "max_tokens": 200,
-                "top_p": 0.9
-            }
-
-            try:
-                response = requests.post(url, headers=headers, json=data)
-                if response.status_code == 200:
-                    result = response.json()
-                    answer = result['choices'][0]['message']['content']
-
-                    # Store bot's answer in the interaction history
-                    interaction["response"] = answer
-                    st.session_state.history[-1] = interaction
-
-                    # Display bot's response
-                    st.write("Answer:", answer)
-
-                else:
-                    st.write(f"Error {response.status_code}: {response.text}")
-            except requests.exceptions.RequestException as e:
-                st.write(f"An error occurred: {e}")
-
-# Display interaction history in the sidebar
+# Display interaction history
+st.sidebar.header("Interaction History")
 if st.session_state.history:
-    st.sidebar.header("Interaction History")
-    for idx, interaction in enumerate(st.session_state.history):
-        st.sidebar.markdown(f"**{interaction['time']}**")
-        st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}") 
-        st.sidebar.markdown(f"**Question**: {interaction['question']}")
-        st.sidebar.markdown(f"**Response**: {interaction['response']}")
-        st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
-        st.sidebar.markdown("---")
+    for entry in st.session_state.history:
+        st.sidebar.write(f"{entry['timestamp']} - {entry['input']} ({entry['language']})")
