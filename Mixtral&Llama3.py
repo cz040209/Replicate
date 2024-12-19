@@ -178,6 +178,9 @@ input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Ma
 if input_method in ["Upload PDF", "Enter Text Manually"]:
     selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
     selected_model_id = available_models[selected_model_name]
+else:
+    # If no model is selected, set a default value or handle accordingly
+    selected_model_id = available_models["Mixtral 8x7b"]  # Set default model ID if no model is selected
 
 # Sidebar for interaction history
 if "history" not in st.session_state:
@@ -340,4 +343,3 @@ if st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
-
