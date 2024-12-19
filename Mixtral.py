@@ -331,12 +331,4 @@ if st.session_state.history:
         st.sidebar.markdown(f"**Question**: {interaction['question']}")
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
-        st.sidebar.markdown("---"), change the OCR to   {
-      "id": "llama-3.2-90b-vision-preview",
-      "object": "model",
-      "created": 1727226914,
-      "owned_by": "Meta",
-      "active": true,
-      "context_window": 8192,
-      "public_apps": null
-    }
+        st.sidebar.markdown("---")
