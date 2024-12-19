@@ -169,14 +169,13 @@ if content:
     question = st.text_input("Ask a question about the content:")
 
     if question:
-        # Create an interaction dictionary
+        # Create interaction dictionary with timestamp
         interaction = {
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "selection": input_method,
+            "input_method": input_method,
             "question": question,
             "response": ""
         }
-
         # Add user question to history
         st.session_state.history.append(interaction)
 
@@ -201,11 +200,9 @@ if content:
                     result = response.json()
                     bot_response = result['choices'][0]['message']['content']
 
-                    # Update the interaction dictionary with bot response
+                    # Update the interaction with bot's response
                     interaction["response"] = bot_response
-
-                    # Add bot response to history
-                    st.session_state.history[-1] = interaction  # Update the last entry with response
+                    st.session_state.history[-1] = interaction  # Update last interaction
 
                     st.write(f"Bot ({selected_model_name}): {bot_response}")
                 else:
@@ -218,14 +215,18 @@ if content:
 else:
     st.warning("Please upload content (PDF, Text, Audio, or Image) before asking questions.")
 
-# Display interaction history in the sidebar with timestamps
+# Display interaction history in the sidebar
 with st.sidebar:
     st.subheader("Interaction History")
     if st.session_state.history:
         for idx, interaction in enumerate(st.session_state.history):
-            st.write(f"Interaction {idx + 1} ({interaction['time']}):")
-            st.write(f"Selection: {interaction['selection']}")
-            st.write(f"Question: {interaction['question']}")
-            st.write(f"Response: {interaction['response']}")
+            if isinstance(interaction, dict):
+                st.write(f"Interaction {idx + 1} ({interaction['time']}):")
+                st.write(f"Input Method: {interaction['input_method']}")
+                st.write(f"Question: {interaction['question']}")
+                st.write(f"Bot Response: {interaction.get('response', 'No response yet')}")
+                st.write("---")
+            else:
+                st.write(f"Invalid interaction data: {interaction}")
     else:
         st.write("No interactions yet.")
