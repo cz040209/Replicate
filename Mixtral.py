@@ -142,22 +142,19 @@ elif input_method == "Upload Audio":
 
     if uploaded_audio:
         st.write("Audio file uploaded. Processing audio...")
-        # Add your audio processing logic here
 
 elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
         st.write("Image uploaded. Processing image...")
-        # Add your image processing logic here
 
 # Step 2: User Input for Questions
 question = st.text_input("Ask a question about the content:")
 
 if question:
     # Add user question to history only if it isn't already present
-    if not any(message.startswith("You:") for message in st.session_state.history):
-        st.session_state.history.append(f"You: {question}")
+    st.session_state.history.append(f"You: {question}")
 
     # Use the appropriate content based on input method
     content = ""
@@ -166,13 +163,6 @@ if question:
         content = pdf_text
     elif input_method == "Enter Text Manually" and manual_text:
         content = manual_text
-    # For Audio and Image, add logic to process and extract content (if applicable)
-    elif input_method == "Upload Audio":
-        # Audio processing logic here
-        content = "Audio content processing not yet implemented."
-    elif input_method == "Upload Image":
-        # Image processing logic here
-        content = "Image content processing not yet implemented."
 
     if content:
         # Send the question and content to the API for response
@@ -195,9 +185,8 @@ if question:
                 result = response.json()
                 bot_response = result['choices'][0]['message']['content']
                 
-                # Only add bot response if it hasn't been added already
-                if not any(message.startswith("Bot") for message in st.session_state.history):
-                    st.session_state.history.append(f"Bot ({selected_model_name}): {bot_response}")
+                # Add bot response to history
+                st.session_state.history.append(f"Bot ({selected_model_name}): {bot_response}")
                 
                 st.write(f"Bot ({selected_model_name}): {bot_response}")
             else:
@@ -208,5 +197,8 @@ if question:
 # Display interaction history in the sidebar
 with st.sidebar:
     st.subheader("Interaction History")
-    for message in st.session_state.history:
-        st.write(message)
+    if st.session_state.history:
+        for message in st.session_state.history:
+            st.write(message)
+    else:
+        st.write("No interactions yet.")
