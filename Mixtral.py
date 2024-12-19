@@ -263,6 +263,11 @@ if content:
                     # Display bot's response
                     st.write(f"Bot's Answer: {answer}")
 
+                    # Translate the bot's answer to the selected language
+                    translated_answer = translate_text(answer, selected_language, selected_model_id)
+                    st.write(f"Translated Answer in {selected_language}:")
+                    st.write(translated_answer)
+
                     # Convert bot's answer to speech
                     tts = gTTS(text=answer, lang='en')
                     tts.save("bot_response.mp3")
