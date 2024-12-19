@@ -261,7 +261,7 @@ elif input_method == "Upload Image":
         st.write("Image uploaded. Analyzing image...")
         # Open the uploaded image for display
         img = Image.open(uploaded_image)
-        st.image(img, caption="Uploaded Image", use_column_width=True)
+        st.image(img, caption="Uploaded Image", use_container_width=True)
 
         # Analyze the uploaded image with EasyOCR
         analysis_result = analyze_image_with_easyocr(uploaded_image)
