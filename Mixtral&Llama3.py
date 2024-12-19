@@ -135,13 +135,16 @@ def translate_text(text, target_language, model_id):
 
 # Function to Convert Audio to Text Using Wav2Vec 2.0
 def transcribe_audio(audio_file):
-    # Load the audio file into a format Wav2Vec can process
-    audio_data = audio_file.read()
-    # Convert to waveform
-    audio_tensor = torch.tensor(audio_data)
+    # Load the audio file with torchaudio
+    waveform, sample_rate = torchaudio.load(audio_file)
+
+    # Resample if necessary (Wav2Vec expects 16kHz)
+    if sample_rate != 16000:
+        waveform = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)(waveform)
+        sample_rate = 16000
 
     # Process the audio with the Wav2Vec2 processor
-    inputs = wav2vec_processor(audio_tensor, return_tensors="pt", sampling_rate=16000)
+    inputs = wav2vec_processor(waveform, return_tensors="pt", sampling_rate=sample_rate)
 
     # Forward pass through the model
     with torch.no_grad():
