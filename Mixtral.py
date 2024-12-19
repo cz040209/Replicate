@@ -4,10 +4,9 @@ import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
-import json
+import pytesseract
 from PIL import Image
-import easyocr  # Import EasyOCR for image-to-text conversion
-import numpy as np
+import json
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -65,8 +64,7 @@ headers = {
 # Available models
 available_models = {
     "Mixtral 8x7b": "mixtral-8x7b-32768",
-    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile",
-    "llama-3.2-90b-vision-preview": "llama-3.2-90b-vision-preview"
+    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile"
 }
 
 # Step 1: Function to Extract Text from PDF
@@ -153,37 +151,6 @@ def transcribe_audio(deepgram_api_key, audio_file):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during transcription: {e}"
 
-# Step 2: Function to Analyze Image using EasyOCR
-def analyze_image_with_easyocr(image_file):
-    reader = easyocr.Reader(['en'])  # Initialize EasyOCR reader (supports multiple languages)
-    
-    # Convert the uploaded file (BytesIO object) to a PIL image
-    img = Image.open(image_file)
-    
-    # Convert the PIL image to a NumPy array
-    img_array = np.array(img)
-    
-    # Use EasyOCR to extract text from the image
-    result = reader.readtext(img_array)
-
-    # Extracting and formatting the recognized text from the result
-    extracted_text = "\n".join([text[1] for text in result])
-    return extracted_text
-
-# Streamlit interface for image upload
-uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-
-if uploaded_image:
-    st.write("Image uploaded. Analyzing image...")
-    
-    # Open the uploaded image for display
-    img = Image.open(uploaded_image)
-    st.image(img, caption="Uploaded Image", use_container_width=True)
-
-    # Analyze the uploaded image with EasyOCR
-    analysis_result = analyze_image_with_easyocr(uploaded_image)
-    st.write("Analysis Result:")
-    st.write(analysis_result)
 
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
@@ -278,18 +245,22 @@ elif input_method == "Upload Audio":
         st.write(transcript)
 
 elif input_method == "Upload Image":
-    uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+    uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
-        st.write("Image uploaded. Analyzing image...")
-        # Open the uploaded image for display
-        img = Image.open(uploaded_image)
-        st.image(img, caption="Uploaded Image", use_container_width=True)
+        st.write("Image uploaded. Extracting text using OCR...")
+        try:
+            image = Image.open(uploaded_image)
+            image_text = pytesseract.image_to_string(image)
+            st.success("Text extracted successfully!")
 
-        # Analyze the uploaded image with EasyOCR
-        analysis_result = analyze_image_with_easyocr(uploaded_image)
-        st.write("Analysis Result:")
-        st.write(analysis_result)
+            # Display extracted text with adjusted font size
+            with st.expander("View Extracted Text"):
+                st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
+
+            content = image_text
+        except Exception as e:
+            st.error(f"Error extracting text from image: {e}")
 
 # Step 2: User Input for Questions
 if content:
@@ -339,10 +310,6 @@ if content:
                     st.write(f"Error {response.status_code}: {response.text}")
             except requests.exceptions.RequestException as e:
                 st.write(f"An error occurred: {e}")
-
-        # Continuously prompt the user for more questions
-        st.text_input("Ask another question:", key="continue_question")
-        st.experimental_rerun()
 
 # Display interaction history in the sidebar
 if st.session_state.history:
