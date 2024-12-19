@@ -78,11 +78,11 @@ def extract_text_from_image(image_file):
     files = {
         "image": image_file
     }
-    
+
     try:
         # Send the request to Groq's API for vision processing
         response = requests.post(url, headers=headers, json=data, files=files)
-        
+
         if response.status_code == 200:
             result = response.json()
             return result['choices'][0]['message']['content']
@@ -145,6 +145,7 @@ def translate_text(text, target_language, model_id):
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
 # Model selection - Available only for PDF and manual text input
+selected_model_id = None  # Initialize model_id as None
 if input_method in ["Upload PDF", "Enter Text Manually"]:
     selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
     selected_model_id = available_models[selected_model_name]
@@ -200,7 +201,7 @@ if content:
         # Add user question to history
         st.session_state.history.append(interaction)
 
-        if content:
+        if content and selected_model_id:  # Check that a model is selected before using it
             # Send the question and content to the API for response
             url = f"{base_url}/chat/completions"
             data = {
