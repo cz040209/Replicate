@@ -1,10 +1,11 @@
-import requests
+import os
+import openai
 import streamlit as st
 import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
-import os
-import pytesseract
+import io
+import base64
 from PIL import Image
 
 # Custom CSS for a more premium look
@@ -50,21 +51,50 @@ st.markdown("""
 # Botify Title
 st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
 
-# Set up API Key from secrets
-api_key = st.secrets["groq_api"]["api_key"]
+# Set up SAMBANOVA API Key (from Streamlit secrets)
+api_key = st.secrets["sambanova_api"]["api_key"]
 
-# Base URL and headers for Groq API
-base_url = "https://api.groq.com/openai/v1"
-headers = {
-    "Authorization": f"Bearer {api_key}",
-    "Content-Type": "application/json"
-}
+# Set up OpenAI client for SAMBANOVA API
+client = openai.OpenAI(
+    api_key=api_key,
+    base_url="https://api.sambanova.ai/v1",
+)
 
 # Available models
 available_models = {
     "Mixtral 8x7b": "mixtral-8x7b-32768",
-    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile"
+    "Llama 3.2 90B Vision Instruct": "llama-3.2-90b-vision-instruct"
 }
+
+# Function to extract text from image using SAMBANOVA API
+def extract_text_from_image(image_file):
+    # Convert image to base64
+    image = Image.open(image_file)
+    image_byte_arr = io.BytesIO()
+    image.save(image_byte_arr, format='PNG')
+    image_base64 = base64.b64encode(image_byte_arr.getvalue()).decode('utf-8')
+
+    # Prepare the request to SAMBANOVA API for text extraction from image
+    response = client.chat.completions.create(
+        model='Llama-3.2-90B-Vision-Instruct',
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What do you see in this image?"},
+                    {"type": "image_url", "image_url": {"url": image_base64}}
+                ]
+            }
+        ],
+        temperature=0.1,
+        top_p=0.1
+    )
+
+    # Parse and return the extracted text from the response
+    try:
+        return response.choices[0].message['content']
+    except Exception as e:
+        return f"An error occurred: {e}"
 
 # Step 1: Function to Extract Text from PDF
 def extract_text_from_pdf(pdf_file):
@@ -218,16 +248,16 @@ elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
-        st.write("Image uploaded. Extracting text using OCR...")
+        st.write("Image uploaded. Extracting text using Llama 3.2 Vision Instruct...")
+
         try:
-            image = Image.open(uploaded_image)
-            image_text = pytesseract.image_to_string(image)
+            # Extract text using the SAMBANOVA API
+            image_text = extract_text_from_image(uploaded_image)
             st.success("Text extracted successfully!")
 
-            # Display extracted text with adjusted font size
+            # Display the extracted text with adjusted font size
             with st.expander("View Extracted Text"):
                 st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
-
             content = image_text
         except Exception as e:
             st.error(f"Error extracting text from image: {e}")
@@ -291,4 +321,3 @@ if st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
-
