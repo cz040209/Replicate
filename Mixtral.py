@@ -94,8 +94,6 @@ def extract_text_from_image(image_file):
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
 
-
-
 # Function to Summarize the Text
 def summarize_text(text, model_id):
     url = f"{base_url}/chat/completions"
@@ -195,18 +193,19 @@ if content:
     question = st.text_input("Ask a question about the content:")
 
     if question:
-        # Create interaction dictionary with timestamp
-        interaction = {
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "input_method": input_method,
-            "question": question,
-            "response": "",
-            "content_preview": content[:100] if content else "No content available"  # Ensure content_preview is always set
-        }
-        # Add user question to history
-        st.session_state.history.append(interaction)
+        # Ensure that the model ID is selected
+        if selected_model_id:
+            # Create interaction dictionary with timestamp
+            interaction = {
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "input_method": input_method,
+                "question": question,
+                "response": "",
+                "content_preview": content[:100] if content else "No content available"
+            }
+            # Add user question to history
+            st.session_state.history.append(interaction)
 
-        if content and selected_model_id:  # Check that a model is selected before using it
             # Send the question and content to the API for response
             url = f"{base_url}/chat/completions"
             data = {
@@ -249,4 +248,3 @@ if st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
-
