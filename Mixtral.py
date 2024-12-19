@@ -6,6 +6,7 @@ from gtts import gTTS  # Import gtts for text-to-speech
 import os
 import json
 from PIL import Image
+import easyocr  # Import EasyOCR for image-to-text conversion
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -151,30 +152,15 @@ def transcribe_audio(deepgram_api_key, audio_file):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during transcription: {e}"
 
-# Step 2: Function to Analyze Image using Llama 90B Vision Model
-def analyze_image_with_llama90b(image_file):
-    # Upload the image file to a server or send it directly to an API
-    # Here we send it directly to Llama Vision model
-    url = f"{base_url}/chat/completions"
-    data = {
-        "model": "llama-3.2-90b-vision-preview",
-        "messages": [
-            {"role": "system", "content": "You are a helpful assistant. Analyze the following image."},
-            {"role": "user", "content": "<Image Binary or URL>"}
-        ],
-        "temperature": 0.7,
-        "max_tokens": 500,
-        "top_p": 0.9
-    }
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        if response.status_code == 200:
-            result = response.json()
-            return result['choices'][0]['message']['content']
-        else:
-            return f"Error {response.status_code}: {response.text}"
-    except requests.exceptions.RequestException as e:
-        return f"An error occurred: {e}"
+# Step 2: Function to Analyze Image using EasyOCR
+def analyze_image_with_easyocr(image_file):
+    reader = easyocr.Reader(['en'])  # Initialize EasyOCR reader (supports multiple languages)
+    img = Image.open(image_file)
+    result = reader.readtext(img)
+
+    # Extracting and formatting the recognized text from the result
+    extracted_text = "\n".join([text[1] for text in result])
+    return extracted_text
 
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
@@ -277,8 +263,8 @@ elif input_method == "Upload Image":
         img = Image.open(uploaded_image)
         st.image(img, caption="Uploaded Image", use_column_width=True)
 
-        # Analyze the uploaded image with Llama Vision Model
-        analysis_result = analyze_image_with_llama90b(uploaded_image)
+        # Analyze the uploaded image with EasyOCR
+        analysis_result = analyze_image_with_easyocr(uploaded_image)
         st.write("Analysis Result:")
         st.write(analysis_result)
 
