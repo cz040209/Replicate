@@ -67,16 +67,16 @@ available_models = {
 
 # Step 1: Function to process the image using Groq's vision model (OCR)
 def extract_text_from_image(image_file):
-    url = f"{base_url}/models/llama-3.2-90b-vision-preview"
-    files = {
-        "image": image_file
-    }
+    url = f"{base_url}/chat/completions"
     data = {
         "model": "llama-3.2-90b-vision-preview",
         "messages": [
             {"role": "system", "content": "Extract text from the uploaded image."},
             {"role": "user", "content": "Please process this image."}
         ]
+    }
+    files = {
+        "image": image_file
     }
     
     try:
