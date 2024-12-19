@@ -1,10 +1,8 @@
 import requests
 import streamlit as st
-import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
-import pytesseract
 from PIL import Image
 
 # Custom CSS for a more premium look
@@ -63,16 +61,35 @@ headers = {
 # Available models
 available_models = {
     "Mixtral 8x7b": "mixtral-8x7b-32768",
-    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile"
+    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile",
+    "Llama 3.2 90b Vision Preview": "llama-3.2-90b-vision-preview"
 }
 
-# Step 1: Function to Extract Text from PDF
-def extract_text_from_pdf(pdf_file):
-    pdf_reader = PyPDF2.PdfReader(pdf_file)
-    extracted_text = ""
-    for page in pdf_reader.pages:
-        extracted_text += page.extract_text()
-    return extracted_text
+# Step 1: Function to process the image using Groq's vision model (OCR)
+def extract_text_from_image(image_file):
+    url = f"{base_url}/models/llama-3.2-90b-vision-preview"
+    files = {
+        "image": image_file
+    }
+    data = {
+        "model": "llama-3.2-90b-vision-preview",
+        "messages": [
+            {"role": "system", "content": "Extract text from the uploaded image."},
+            {"role": "user", "content": "Please process this image."}
+        ]
+    }
+    
+    try:
+        # Send the request to Groq's API for vision processing
+        response = requests.post(url, headers=headers, json=data, files=files)
+        
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content']
+        else:
+            return f"Error {response.status_code}: {response.text}"
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred: {e}"
 
 # Function to Summarize the Text
 def summarize_text(text, model_id):
@@ -150,78 +167,13 @@ languages = [
 selected_language = st.selectbox("Choose your preferred language for output", languages)
 
 # Handle different input methods
-if input_method == "Upload PDF":
-    uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
-
-    if uploaded_file:
-        # Extract text from the uploaded PDF
-        st.write("Extracting text from the uploaded PDF...")
-        pdf_text = extract_text_from_pdf(uploaded_file)
-        st.success("Text extracted successfully!")
-
-        # Display extracted text with adjusted font size
-        with st.expander("View Extracted Text"):
-            st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
-
-        # Assign extracted text to content for chat
-        content = pdf_text
-
-        # Summarize the extracted text only when the button is clicked
-        if st.button("Summarize Text"):
-            st.write("Summarizing the text...")
-            summary = summarize_text(pdf_text, selected_model_id)
-            st.write("Summary:")
-            st.write(summary)
-
-            # Translate the summary to the selected language
-            translated_summary = translate_text(summary, selected_language, selected_model_id)
-            st.write(f"Translated Summary in {selected_language}:")
-            st.write(translated_summary)
-
-            # Convert summary to audio in English (not translated)
-            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
-            tts.save("response.mp3")
-            st.audio("response.mp3", format="audio/mp3")
-
-elif input_method == "Enter Text Manually":
-    manual_text = st.text_area("Enter your text manually:")
-
-    if manual_text:
-        # Assign entered text to content for chat
-        content = manual_text
-
-        if st.button("Summarize Text"):
-            st.write("Summarizing the entered text...")
-            summary = summarize_text(manual_text, selected_model_id)
-            st.write("Summary:")
-            st.write(summary)
-
-            # Translate the summary to the selected language
-            translated_summary = translate_text(summary, selected_language, selected_model_id)
-            st.write(f"Translated Summary in {selected_language}:")
-            st.write(translated_summary)
-
-            # Convert summary to audio in English (not translated)
-            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
-            tts.save("response.mp3")
-            st.audio("response.mp3", format="audio/mp3")
-
-elif input_method == "Upload Audio":
-    uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
-
-    if uploaded_audio:
-        st.write("Audio file uploaded. Processing audio...")
-        # Placeholder for future audio processing
-        content = "Audio content will be processed here."
-
-elif input_method == "Upload Image":
+if input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
-        st.write("Image uploaded. Extracting text using OCR...")
+        st.write("Image uploaded. Extracting text using Groq OCR model...")
         try:
-            image = Image.open(uploaded_image)
-            image_text = pytesseract.image_to_string(image)
+            image_text = extract_text_from_image(uploaded_image)
             st.success("Text extracted successfully!")
 
             # Display extracted text with adjusted font size
