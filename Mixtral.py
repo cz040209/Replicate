@@ -98,9 +98,13 @@ def summarize_text(text, model_id):
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
-# Model selection
-selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
-selected_model_id = available_models[selected_model_name]
+# Display model selection only for PDF and Manual Text input
+if input_method in ["Upload PDF", "Enter Text Manually"]:
+    selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
+    selected_model_id = available_models[selected_model_name]
+else:
+    selected_model_name = None
+    selected_model_id = None
 
 # Sidebar for interaction history
 if "history" not in st.session_state:
