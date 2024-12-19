@@ -257,7 +257,10 @@ elif input_method == "Upload Audio":
 
 # Function to extract text from an image using Llama-3.2-90b-vision-preview model
 def extract_text_using_llama_vision(image_file):
+    # The URL for the Groq API (make sure this is correct)
     url = f"{base_url}/chat/completions"
+    
+    # Prepare the JSON payload for the request
     data = {
         "model": "llama-3.2-90b-vision-preview",
         "messages": [
@@ -268,19 +271,27 @@ def extract_text_using_llama_vision(image_file):
         "max_tokens": 500,
         "top_p": 0.9
     }
-    
+
+    # Open the image file as a binary object (in case it's not already)
     files = {
-        "image": image_file  # Upload the image file directly
+        "image": image_file  # Pass the image file directly
     }
 
     try:
-        response = requests.post(url, headers=headers, json=data, files=files)
+        # Send the POST request to the API with both JSON and file data
+        response = requests.post(url, headers=headers, data=data, files=files)
+
+        # Check if the request was successful
         if response.status_code == 200:
             result = response.json()
+            # Extract the text from the API response and return it
             return result['choices'][0]['message']['content']  # Extracted text from the image
         else:
+            # If the API call failed, return the error message
             return f"Error {response.status_code}: {response.text}"
+    
     except requests.exceptions.RequestException as e:
+        # Handle any request exceptions
         return f"An error occurred during image processing: {e}"
 
 # Update in the image upload section
@@ -303,6 +314,7 @@ elif input_method == "Upload Image":
             content = extracted_text
         else:
             st.error("Error extracting text from the image.")
+
 
 # Step 2: User Input for Questions
 if content:
