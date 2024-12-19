@@ -7,7 +7,6 @@ import os
 import pytesseract
 from PIL import Image
 import json
-import io
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -134,11 +133,12 @@ def transcribe_audio(deepgram_api_key, audio_file):
         "Authorization": f"Token {deepgram_api_key}",
     }
 
-    # Convert Streamlit uploaded audio file to binary data
+    # Get the file data directly from the uploaded file
     audio_data = audio_file.getvalue()
 
+    # Send the file with the correct MIME type
     files = {
-        'file': ('audio_file', audio_data),
+        'file': ('audio_file', audio_data, audio_file.type),  # File with its MIME type
     }
 
     try:
@@ -150,6 +150,7 @@ def transcribe_audio(deepgram_api_key, audio_file):
             return f"Error {response.status_code}: {response.text}"
     except requests.exceptions.RequestException as e:
         return f"An error occurred during transcription: {e}"
+
 
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
