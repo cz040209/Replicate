@@ -7,12 +7,12 @@ import os
 import json
 from transformers import BlipProcessor, BlipForConditionalGeneration
 
-# Hugging Face Token (BLIP-2)
-hf_token = "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"
-
-# Initialize the session state for history if not already initialized
+# Initialize session state for history if not already initialized
 if "history" not in st.session_state:
     st.session_state.history = []
+
+# Hugging Face Token (BLIP-2)
+hf_token = "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"
 
 # Initialize BLIP-2 model
 processor = BlipProcessor.from_pretrained("Salesforce/blip-2", use_auth_token=hf_token)
@@ -161,7 +161,6 @@ def transcribe_audio(deepgram_api_key, audio_file):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during transcription: {e}"
 
-
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
@@ -169,10 +168,6 @@ input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Ma
 if input_method in ["Upload PDF", "Enter Text Manually"]:
     selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
     selected_model_id = available_models[selected_model_name]
-
-# Sidebar for interaction history
-if "history" not in st.session_state:
-    st.session_state.history = []
 
 # Initialize content variable
 content = ""
@@ -270,7 +265,6 @@ if input_method == "Upload Image":
 
         st.write("Generated Caption:")
         st.write(caption)
-
 
 # Step 2: User Input for Questions
 if content:
