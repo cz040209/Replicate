@@ -55,8 +55,6 @@ st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
 # Initialize interaction history in session state
 if "history" not in st.session_state:
     st.session_state.history = []
-if "selected_interaction" not in st.session_state:
-    st.session_state.selected_interaction = None
 
 # Step 1: Function to Extract Text from PDF
 def extract_text_from_pdf(pdf_file):
@@ -68,21 +66,14 @@ def extract_text_from_pdf(pdf_file):
 
 # Sidebar for interaction history
 st.sidebar.header("Interaction History")
-if st.session_state.history:
-    interaction_options = [f"Interaction {i + 1}" for i in range(len(st.session_state.history))]
-    selected_index = st.sidebar.selectbox(
-        "Select an interaction to view details:",
-        options=interaction_options
-    )
-    if selected_index:
-        index = int(selected_index.split(" ")[1]) - 1
-        st.session_state.selected_interaction = st.session_state.history[index]
+interaction_options = [f"Interaction {i + 1}" for i in range(len(st.session_state.history))]
+selected_interaction = st.sidebar.radio("Select an interaction to view:", options=interaction_options)
 
-# Display selected interaction in the sidebar
-if st.session_state.selected_interaction:
+if selected_interaction:
+    index = int(selected_interaction.split(" ")[1]) - 1
     st.sidebar.subheader("Selected Interaction")
-    st.sidebar.write(f"**Question:** {st.session_state.selected_interaction['question']}")
-    st.sidebar.write(f"**Response:** {st.session_state.selected_interaction['response']}")
+    st.sidebar.write(f"**Question:** {st.session_state.history[index]['question']}")
+    st.sidebar.write(f"**Response:** {st.session_state.history[index]['response']}")
 
 # Model selection
 selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
@@ -97,9 +88,16 @@ if uploaded_file:
     pdf_text = extract_text_from_pdf(uploaded_file)
     st.success("Text extracted successfully!")
 
-    # Display extracted text (Optional)
+    # Display extracted text (Scrollable container for readability)
     with st.expander("View Extracted Text"):
-        st.write(pdf_text)
+        st.markdown(
+            f"""
+            <div style="max-height: 300px; overflow-y: auto; font-size: 14px; line-height: 1.5; background-color: #f5f5f5; padding: 10px; border-radius: 5px;">
+                {pdf_text}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     # Step 2: User Input for Questions
     question = st.text_input("Ask a question about the PDF content:")
