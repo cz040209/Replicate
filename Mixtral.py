@@ -6,7 +6,7 @@ from gtts import gTTS  # Import gtts for text-to-speech
 import os
 import pytesseract
 from PIL import Image
-import toml  # Import TOML library for reading configuration
+import json
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -51,10 +51,9 @@ st.markdown("""
 # Botify Title
 st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
 
-# Load API Key from TOML configuration
-config = toml.load("config.toml")
-groq_api_key = config["groq_api"]["api_key"]
-deepgram_api_key = config["deepgram_api"]["api_key"]
+# Define API keys directly in the code (no TOML)
+groq_api_key = "your_groq_api_key_here"
+deepgram_api_key = "your_deepgram_api_key_here"
 
 # Base URL and headers for Groq API
 base_url = "https://api.groq.com/openai/v1"
@@ -125,27 +124,26 @@ def translate_text(text, target_language, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
-# Function to transcribe audio using Deepgram API
-def transcribe_audio_with_deepgram(audio_file):
+# Function to Convert Audio to Text Using Deepgram API
+def transcribe_audio(deepgram_api_key, audio_file):
     url = "https://api.deepgram.com/v1/listen"
     headers = {
-        "Authorization": f"Bearer {deepgram_api_key}",
-        "Content-Type": "application/json"
+        "Authorization": f"Token {deepgram_api_key}",
+    }
+
+    files = {
+        'file': audio_file,
     }
 
     try:
-        # Send the audio file to Deepgram for transcription
-        response = requests.post(url, headers=headers, files={"file": audio_file})
-
+        response = requests.post(url, headers=headers, files=files)
         if response.status_code == 200:
             result = response.json()
-            transcription = result.get('results', {}).get('channels', [])[0].get('alternatives', [])[0].get('transcript', '')
-            return transcription
+            return result['results']['channels'][0]['alternatives'][0]['transcript']
         else:
             return f"Error {response.status_code}: {response.text}"
-
     except requests.exceptions.RequestException as e:
-        return f"An error occurred: {e}"
+        return f"An error occurred during transcription: {e}"
 
 # Streamlit UI
 
@@ -164,7 +162,7 @@ if "history" not in st.session_state:
 # Initialize content variable
 content = ""
 
-# Language selection for translation (You can modify the languages list as needed)
+# Language selection for translation
 languages = [
     "English", "Spanish", "French", "Italian", "Portuguese", "Romanian", 
     "German", "Dutch", "Swedish", "Danish", "Norwegian", "Russian", 
@@ -236,14 +234,10 @@ elif input_method == "Upload Audio":
 
     if uploaded_audio:
         st.write("Audio file uploaded. Processing audio...")
-        
-        # Transcribe the audio using Deepgram
-        transcription = transcribe_audio_with_deepgram(uploaded_audio)
-        st.write("Transcription Result:")
-        st.write(transcription)
-
-        # Store transcription in content for further processing
-        content = transcription
+        # Use Deepgram for transcription
+        transcript = transcribe_audio(deepgram_api_key, uploaded_audio)
+        st.write("Transcription:")
+        st.write(transcript)
 
 elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
@@ -274,7 +268,7 @@ if content:
             "input_method": input_method,
             "question": question,
             "response": "",
-            "content_preview": content[:100] if content else "No content available"  # Ensure content_preview is always set
+            "content_preview": content[:100] if content else "No content available"
         }
         # Add user question to history
         st.session_state.history.append(interaction)
@@ -318,7 +312,7 @@ if st.session_state.history:
     for idx, interaction in enumerate(st.session_state.history):
         st.sidebar.markdown(f"**{interaction['time']}**")
         st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")
-        st.sidebar.markdown(f"**Question**: {interaction['question']}") 
+        st.sidebar.markdown(f"**Question**: {interaction['question']}")
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
