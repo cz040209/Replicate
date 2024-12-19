@@ -1,3 +1,4 @@
+import requests
 import os
 import openai
 import streamlit as st
@@ -7,7 +8,6 @@ from gtts import gTTS  # Import gtts for text-to-speech
 import io
 import base64
 from PIL import Image
-import requests
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -52,25 +52,20 @@ st.markdown("""
 # Botify Title
 st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
 
-# Set up API keys for the services
-sambanova_api_key = st.secrets["sambanova_api"]["api_key"]
-groq_api_key = st.secrets["groq_api"]["api_key"]  # Assuming you are using Groq API for Llama models
+# Set up SAMBANOVA API Key (from Streamlit secrets)
+api_key = st.secrets["sambanova_api"]["api_key"]
 
-# Set up OpenAI client for SAMBANOVA API (if needed)
+# Set up OpenAI client for SAMBANOVA API
 client = openai.OpenAI(
-    api_key=sambanova_api_key,
+    api_key=api_key,
     base_url="https://api.sambanova.ai/v1",
 )
 
-# Available models for Llama and Mixtral
+# Available models
 available_models = {
     "Mixtral 8x7b": "mixtral-8x7b-32768",
-    "Llama 3.0 70B": "llama-3.0-70b"  # Llama 3.0 70B model for summarization, translation, and chat
+    "Llama 3.2 90B Vision Instruct": "llama-3.2-90b-vision-instruct"
 }
-
-# Deepgram API Key and URL
-DEEPGRAM_API_KEY = "b15a8e156734aa793e052481b11a173115a5cd18"
-DEEPGRAM_API_URL = "https://api.deepgram.com/v1/listen"
 
 # Function to extract text from image using SAMBANOVA API
 def extract_text_from_image(image_file):
@@ -110,16 +105,9 @@ def extract_text_from_pdf(pdf_file):
         extracted_text += page.extract_text()
     return extracted_text
 
-def summarize_text(text, selected_model):
-    url = "https://api.groq.com/openai/v1/models"  # Corrected endpoint for Groq models
-    headers = {
-        "Authorization": f"Bearer {groq_api_key}",
-        "Content-Type": "application/json"
-    }
-    
-    # Select model dynamically based on user choice
-    model_id = available_models[selected_model]
-
+# Function to Summarize the Text
+def summarize_text(text, model_id):
+    url = f"{base_url}/chat/completions"
     data = {
         "model": model_id,
         "messages": [
@@ -141,16 +129,9 @@ def summarize_text(text, selected_model):
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
 
-def translate_text(text, target_language, selected_model):
-    url = "https://api.groq.com/openai/v1/models"  # Corrected endpoint for Groq models
-    headers = {
-        "Authorization": f"Bearer {groq_api_key}",
-        "Content-Type": "application/json"
-    }
-    
-    # Select model dynamically based on user choice
-    model_id = available_models[selected_model]
-
+# Function to Translate Text Using the Selected Model
+def translate_text(text, target_language, model_id):
+    url = f"{base_url}/chat/completions"
     data = {
         "model": model_id,
         "messages": [
@@ -168,7 +149,7 @@ def translate_text(text, target_language, selected_model):
             result = response.json()
             return result['choices'][0]['message']['content']
         else:
-            return f"Error {response.status_code}: {response.text}"
+            return f"Translation error: {response.status_code}"
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
@@ -216,15 +197,15 @@ if input_method == "Upload PDF":
         # Assign extracted text to content for chat
         content = pdf_text
 
-        # Summarize the extracted text
+        # Summarize the extracted text only when the button is clicked
         if st.button("Summarize Text"):
-            st.write("Summarizing the text using the selected model...")
-            summary = summarize_text(pdf_text, selected_model_name)
+            st.write("Summarizing the text...")
+            summary = summarize_text(pdf_text, selected_model_id)
             st.write("Summary:")
             st.write(summary)
 
             # Translate the summary to the selected language
-            translated_summary = translate_text(summary, selected_language, selected_model_name)
+            translated_summary = translate_text(summary, selected_language, selected_model_id)
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
 
@@ -242,12 +223,12 @@ elif input_method == "Enter Text Manually":
 
         if st.button("Summarize Text"):
             st.write("Summarizing the entered text...")
-            summary = summarize_text(manual_text, selected_model_name)
+            summary = summarize_text(manual_text, selected_model_id)
             st.write("Summary:")
             st.write(summary)
 
             # Translate the summary to the selected language
-            translated_summary = translate_text(summary, selected_language, selected_model_name)
+            translated_summary = translate_text(summary, selected_language, selected_model_id)
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
 
@@ -300,7 +281,7 @@ if content:
 
         if content:
             # Send the question and content to the API for response
-            url = f"https://api.groq.com/v1/chat/completions"
+            url = f"{base_url}/chat/completions"
             data = {
                 "model": selected_model_id,
                 "messages": [
