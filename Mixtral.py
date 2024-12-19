@@ -95,12 +95,12 @@ def summarize_text(text, model_id):
         return f"An error occurred: {e}"
 
 # Function to Translate Text Using the Selected Model
-def translate_text(text, model_id):
+def translate_text(text, target_language, model_id):
     url = f"{base_url}/chat/completions"
     data = {
         "model": model_id,
         "messages": [
-            {"role": "system", "content": "You are a helpful assistant. Translate the following text to the selected language."},
+            {"role": "system", "content": f"Translate the following text into {target_language}."},
             {"role": "user", "content": text}
         ],
         "temperature": 0.7,
@@ -170,7 +170,7 @@ if input_method == "Upload PDF":
             st.write(summary)
 
             # Translate the summary to the selected language
-            translated_summary = translate_text(summary, selected_model_id)
+            translated_summary = translate_text(summary, selected_language, selected_model_id)
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
 
@@ -188,7 +188,7 @@ elif input_method == "Enter Text Manually":
             st.write(summary)
 
             # Translate the summary to the selected language
-            translated_summary = translate_text(summary, selected_model_id)
+            translated_summary = translate_text(summary, selected_language, selected_model_id)
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
 
@@ -251,7 +251,7 @@ if content:
                     st.write(f"Bot ({selected_model_name}): {bot_response}")
 
                     # Translate the bot's response to the selected language
-                    translated_response = translate_text(bot_response, selected_model_id)
+                    translated_response = translate_text(bot_response, selected_language, selected_model_id)
                     st.write(f"Translated Response in {selected_language}:")
                     st.write(translated_response)
 
