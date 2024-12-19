@@ -6,6 +6,7 @@ from gtts import gTTS  # Import gtts for text-to-speech
 import os
 import pytesseract
 from PIL import Image
+import toml  # Import TOML library for reading configuration
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -50,13 +51,15 @@ st.markdown("""
 # Botify Title
 st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
 
-# Set up API Key from secrets
-api_key = st.secrets["groq_api"]["api_key"]
+# Load API Key from TOML configuration
+config = toml.load("config.toml")
+groq_api_key = config["groq_api"]["api_key"]
+deepgram_api_key = config["deepgram_api"]["api_key"]
 
 # Base URL and headers for Groq API
 base_url = "https://api.groq.com/openai/v1"
 headers = {
-    "Authorization": f"Bearer {api_key}",
+    "Authorization": f"Bearer {groq_api_key}",
     "Content-Type": "application/json"
 }
 
@@ -121,6 +124,28 @@ def translate_text(text, target_language, model_id):
             return f"Translation error: {response.status_code}"
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
+
+# Function to transcribe audio using Deepgram API
+def transcribe_audio_with_deepgram(audio_file):
+    url = "https://api.deepgram.com/v1/listen"
+    headers = {
+        "Authorization": f"Bearer {deepgram_api_key}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        # Send the audio file to Deepgram for transcription
+        response = requests.post(url, headers=headers, files={"file": audio_file})
+
+        if response.status_code == 200:
+            result = response.json()
+            transcription = result.get('results', {}).get('channels', [])[0].get('alternatives', [])[0].get('transcript', '')
+            return transcription
+        else:
+            return f"Error {response.status_code}: {response.text}"
+
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred: {e}"
 
 # Streamlit UI
 
@@ -211,8 +236,14 @@ elif input_method == "Upload Audio":
 
     if uploaded_audio:
         st.write("Audio file uploaded. Processing audio...")
-        # Placeholder for future audio processing
-        content = "Audio content will be processed here."
+        
+        # Transcribe the audio using Deepgram
+        transcription = transcribe_audio_with_deepgram(uploaded_audio)
+        st.write("Transcription Result:")
+        st.write(transcription)
+
+        # Store transcription in content for further processing
+        content = transcription
 
 elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
@@ -287,7 +318,7 @@ if st.session_state.history:
     for idx, interaction in enumerate(st.session_state.history):
         st.sidebar.markdown(f"**{interaction['time']}**")
         st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")
-        st.sidebar.markdown(f"**Question**: {interaction['question']}")
+        st.sidebar.markdown(f"**Question**: {interaction['question']}") 
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
