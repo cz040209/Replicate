@@ -11,8 +11,8 @@ import json
 
 # Hugging Face BLIP-2 Setup
 hf_token = "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"
-blip_processor = BlipProcessor.from_pretrained("Salesforce/blip2-opt-2.7b", use_auth_token=hf_token)
-blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip2-opt-2.7b", use_auth_token=hf_token)
+blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
+blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
 
 
 # Custom CSS for a more premium look
