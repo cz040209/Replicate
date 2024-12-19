@@ -65,13 +65,13 @@ available_models = {
     "Llama 3.2 90b Vision Preview": "llama-3.2-90b-vision-preview"
 }
 
-# Extract text from image function
+# Function to Extract Text from Image
 def extract_text_from_image(image_file):
     url = f"{base_url}/chat/completions"
     
-    # Prepare the data payload (ensure it's properly structured)
+    # Prepare the data payload for image processing
     data = {
-        "model": "llama-3.2-90b-vision-preview",  # Correct model ID for image processing
+        "model": "llama-3.2-90b-vision-preview",  # Correct model for image processing
         "messages": [
             {"role": "system", "content": "Extract text from the uploaded image."},
             {"role": "user", "content": "Please process this image."}
@@ -80,11 +80,11 @@ def extract_text_from_image(image_file):
     
     # Prepare the files parameter for the image upload
     files = {
-        "file": image_file  # The correct key here is 'file', not 'image'
+        "file": image_file  # Correct key for the file parameter
     }
 
     try:
-        # Send the request to Groq's API for vision processing
+        # Send request for image processing
         response = requests.post(url, headers=headers, json=data, files=files)
         
         if response.status_code == 200:
@@ -95,8 +95,12 @@ def extract_text_from_image(image_file):
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
 
-# Function to Summarize the Text
-def summarize_text(text, model_id):
+# Function to Summarize Text
+def summarize_text(text, model_choice):
+    model_id = available_models.get(model_choice)
+    if not model_id:
+        return "Selected model not found."
+
     url = f"{base_url}/chat/completions"
     data = {
         "model": model_id,
@@ -119,8 +123,12 @@ def summarize_text(text, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
 
-# Function to Translate Text Using the Selected Model
-def translate_text(text, target_language, model_id):
+# Function to Translate Text
+def translate_text(text, target_language, model_choice):
+    model_id = available_models.get(model_choice)
+    if not model_id:
+        return "Selected model not found."
+
     url = f"{base_url}/chat/completions"
     data = {
         "model": model_id,
@@ -143,16 +151,42 @@ def translate_text(text, target_language, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
-# Streamlit UI
+# Function for Chat (Answering questions)
+def chat_with_content(content, question, model_choice):
+    model_id = available_models.get(model_choice)
+    if not model_id:
+        return "Selected model not found."
 
-# Input Method Selection
+    url = f"{base_url}/chat/completions"
+    data = {
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+            {"role": "system", "content": content},
+            {"role": "user", "content": question}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 200,
+        "top_p": 0.9
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content']
+        else:
+            return f"Error {response.status_code}: {response.text}"
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred: {e}"
+
+# Streamlit UI for Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
 # Model selection - Available only for PDF and manual text input
-selected_model_id = None  # Initialize model_id as None
+selected_model_name = None
 if input_method in ["Upload PDF", "Enter Text Manually"]:
     selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
-    selected_model_id = available_models[selected_model_name]
 
 # Sidebar for interaction history
 if "history" not in st.session_state:
@@ -195,10 +229,10 @@ if content:
 
     if question:
         # Check if a model is selected before proceeding
-        if not selected_model_id:
+        if not selected_model_name:
             st.error("Please select a model before asking questions.")
         else:
-            # Create interaction dictionary with timestamp
+            # Add the user question to history and process it
             interaction = {
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "input_method": input_method,
@@ -206,40 +240,15 @@ if content:
                 "response": "",
                 "content_preview": content[:100] if content else "No content available"
             }
-            # Add user question to history
             st.session_state.history.append(interaction)
 
-            # Send the question and content to the API for response
-            url = f"{base_url}/chat/completions"
-            data = {
-                "model": selected_model_id,
-                "messages": [
-                    {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                    {"role": "system", "content": content},
-                    {"role": "user", "content": question}
-                ],
-                "temperature": 0.7,
-                "max_tokens": 200,
-                "top_p": 0.9
-            }
+            # Use the selected model name to process the question
+            answer = chat_with_content(content, question, selected_model_name)
 
-            try:
-                response = requests.post(url, headers=headers, json=data)
-                if response.status_code == 200:
-                    result = response.json()
-                    answer = result['choices'][0]['message']['content']
-
-                    # Store bot's answer in the interaction history
-                    interaction["response"] = answer
-                    st.session_state.history[-1] = interaction
-
-                    # Display bot's response
-                    st.write("Answer:", answer)
-
-                else:
-                    st.write(f"Error {response.status_code}: {response.text}")
-            except requests.exceptions.RequestException as e:
-                st.write(f"An error occurred: {e}")
+            # Display the answer
+            interaction["response"] = answer
+            st.session_state.history[-1] = interaction
+            st.write("Answer:", answer)
 
 # Display interaction history in the sidebar
 if st.session_state.history:
