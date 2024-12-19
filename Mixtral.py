@@ -2,9 +2,8 @@ import requests
 import streamlit as st
 import PyPDF2
 from datetime import datetime
-from gtts import gTTS
+from gtts import gTTS  # Import gtts for text-to-speech
 import os
-import io
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -121,14 +120,6 @@ def translate_text(text, target_language, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
-# Function to Convert Text to Speech
-def text_to_speech(text):
-    tts = gTTS(text=text, lang='en')
-    speech_file = io.BytesIO()
-    tts.save(speech_file)
-    speech_file.seek(0)
-    return speech_file
-
 # Streamlit UI
 
 # Input Method Selection
@@ -185,6 +176,11 @@ if input_method == "Upload PDF":
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
 
+            # Convert summary to audio
+            tts = gTTS(text=translated_summary, lang='en')
+            tts.save("response.mp3")
+            st.audio("response.mp3", format="audio/mp3")
+
 elif input_method == "Enter Text Manually":
     manual_text = st.text_area("Enter your text manually:")
 
@@ -202,6 +198,11 @@ elif input_method == "Enter Text Manually":
             translated_summary = translate_text(summary, selected_language, selected_model_id)
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
+
+            # Convert summary to audio
+            tts = gTTS(text=translated_summary, lang='en')
+            tts.save("response.mp3")
+            st.audio("response.mp3", format="audio/mp3")
 
 elif input_method == "Upload Audio":
     uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
@@ -266,11 +267,10 @@ if content:
                     st.write(f"Translated Response in {selected_language}:")
                     st.write(translated_response)
 
-                    # Convert the bot's response to speech
-                    speech_file = text_to_speech(bot_response)
-
-                    # Provide an audio player to listen to the response
-                    st.audio(speech_file, format='audio/mp3')
+                    # Convert the bot's response to audio
+                    tts = gTTS(text=translated_response, lang='en')
+                    tts.save("response.mp3")
+                    st.audio("response.mp3", format="audio/mp3")
 
                 else:
                     st.write(f"Error {response.status_code}: {response.text}")
