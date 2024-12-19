@@ -7,6 +7,9 @@ import os
 import pytesseract
 from PIL import Image
 
+# Set up Hugging Face API key for Stable Diffusion
+hf_api_key = "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"  # Your Hugging Face Stable Diffusion API key
+
 # Set the path to the Tesseract executable
 pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
@@ -125,23 +128,24 @@ def translate_text(text, target_language, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
-# Function to Generate Image from Text Prompt (using an API like Stable Diffusion)
+# Function to generate image using Stable Diffusion API
 def generate_image_from_prompt(prompt):
-    # Replace with your API for Stable Diffusion or other text-to-image generator
-    image_api_url = "https://api.stablediffusionapi.com/v3/text-to-image"  # Example URL
+    image_api_url = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2"  # Stable Diffusion model URL
+    headers = {
+        "Authorization": f"Bearer {hf_api_key}"
+    }
     payload = {
-        "key": "your_stable_diffusion_api_key",  # Your API key here
-        "prompt": prompt,
-        "negative_prompt": "bad anatomy, blurry, deformed",
-        "width": 512,
-        "height": 512,
-        "samples": 1
+        "inputs": prompt,
+        "options": {
+            "use_cache": False
+        }
     }
 
     try:
-        response = requests.post(image_api_url, json=payload)
+        response = requests.post(image_api_url, headers=headers, json=payload)
         if response.status_code == 200:
-            image_url = response.json()['images'][0]
+            # Get the generated image URL from response
+            image_url = response.json()["data"][0]["url"]
             return image_url
         else:
             return f"Error {response.status_code}: {response.text}"
