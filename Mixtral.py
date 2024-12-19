@@ -206,9 +206,12 @@ if content:
 else:
     st.warning("Please upload content (PDF, Text, Audio, or Image) before asking questions.")
 
-# Display interaction history in the sidebar
+# Display interaction history and count in the sidebar
 with st.sidebar:
     st.subheader("Interaction History")
+    history_count = len(st.session_state.history)
+    st.write(f"Total interactions: {history_count}")
+    
     if st.session_state.history:
         for message in st.session_state.history:
             st.write(message)
