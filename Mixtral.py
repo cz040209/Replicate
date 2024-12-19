@@ -154,13 +154,25 @@ def transcribe_audio(deepgram_api_key, audio_file):
 
 # Step 2: Function to Analyze Image using EasyOCR
 def analyze_image_with_easyocr(image_file):
-    reader = easyocr.Reader(['en'])  # Initialize EasyOCR reader (supports multiple languages)
-    img = Image.open(image_file)
-    result = reader.readtext(img)
+    try:
+        # Initialize EasyOCR reader (supports multiple languages)
+        reader = easyocr.Reader(['en'])
 
-    # Extracting and formatting the recognized text from the result
-    extracted_text = "\n".join([text[1] for text in result])
-    return extracted_text
+        # Open the uploaded image using PIL Image
+        img = Image.open(image_file)
+
+        # Convert the PIL image to a format that EasyOCR can process
+        img = img.convert('RGB')
+
+        # Use EasyOCR to extract text from the image
+        result = reader.readtext(img)
+
+        # Extracting and formatting the recognized text from the result
+        extracted_text = "\n".join([text[1] for text in result])
+        return extracted_text
+    except Exception as e:
+        return f"An error occurred during image analysis: {str(e)}"
+
 
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
