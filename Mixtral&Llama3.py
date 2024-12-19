@@ -11,8 +11,8 @@ import json
 
 # Hugging Face BLIP-2 Setup
 hf_token = "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"
-blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
-blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
+blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
+blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
 
 # Hugging Face Wav2Vec 2.0 Setup for Audio-to-Text
 wav2vec_processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
