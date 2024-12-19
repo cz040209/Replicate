@@ -6,6 +6,7 @@ from gtts import gTTS  # Import gtts for text-to-speech
 import os
 import pytesseract
 from PIL import Image
+from io import BytesIO
 
 hf_api_key = st.secrets["hugging_face"]["api_key"]
 
