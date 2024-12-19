@@ -51,9 +51,9 @@ st.markdown("""
 # Botify Title
 st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
 
-# Define API keys directly in the code (no TOML)
-groq_api_key = "your_groq_api_key_here"
-deepgram_api_key = "your_deepgram_api_key_here"
+# Retrieve API keys from the secrets file
+groq_api_key = st.secrets["groq"]["api_key"]
+deepgram_api_key = st.secrets["deepgram"]["api_key"]
 
 # Base URL and headers for Groq API
 base_url = "https://api.groq.com/openai/v1"
