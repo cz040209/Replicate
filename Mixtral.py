@@ -4,9 +4,16 @@ import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
-import pytesseract
+from transformers import BlipProcessor, BlipForConditionalGeneration
+import torch
 from PIL import Image
 import json
+
+# Hugging Face BLIP-2 Setup
+hf_token = "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"
+blip_processor = BlipProcessor.from_pretrained("Salesforce/blip2-opt-2.7b", use_auth_token=hf_token)
+blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip2-opt-2.7b", use_auth_token=hf_token)
+
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -244,14 +251,14 @@ elif input_method == "Upload Audio":
         st.write("Transcription:")
         st.write(transcript)
 
-elif input_method == "Upload Image":
+if input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
-        st.write("Image uploaded. Extracting text using OCR...")
+        st.write("Image uploaded. Extracting text using BLIP-2...")
         try:
-            image = Image.open(uploaded_image)
-            image_text = pytesseract.image_to_string(image)
+            # Extract text using BLIP-2
+            image_text = extract_text_from_image(uploaded_image)
             st.success("Text extracted successfully!")
 
             # Display extracted text with adjusted font size
@@ -261,6 +268,20 @@ elif input_method == "Upload Image":
             content = image_text
         except Exception as e:
             st.error(f"Error extracting text from image: {e}")
+
+# Step 1: Function to Extract Text from Image using BLIP-2
+def extract_text_from_image(image_file):
+    # Open image from uploaded file
+    image = Image.open(image_file)
+
+    # Preprocess the image for the BLIP-2 model
+    inputs = blip_processor(images=image, return_tensors="pt")
+
+    # Generate the caption (text) for the image
+    out = blip_model.generate(**inputs)
+    caption = blip_processor.decode(out[0], skip_special_tokens=True)
+
+    return caption
 
 # Step 2: User Input for Questions
 if content:
