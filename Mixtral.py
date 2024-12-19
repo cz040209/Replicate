@@ -214,18 +214,17 @@ elif input_method == "Upload Image":
     if uploaded_image:
         st.write("Image uploaded. Extracting text using Groq's Llama-3.2-90b-Vision model...")
 
-        # Convert the uploaded image into a byte array for sending to the Groq API
-        image_data = uploaded_image.read()
-
-        # Call Groq API for image-to-text
+        # Prepare to send the image to the Groq API
         image_to_text_url = f"{base_url}/models/llama-3.2-90b-vision-preview/generate"
-        data = {
-            "inputs": image_data
-        }
         
         try:
-            response = requests.post(image_to_text_url, headers=headers, files={"file": uploaded_image})
+            # Ensure we send the image using the 'files' parameter
+            files = {"file": uploaded_image}  # Groq expects the image in the "file" field
+            
+            response = requests.post(image_to_text_url, headers=headers, files=files)
+            
             if response.status_code == 200:
+                # Handle the response from Groq API
                 extracted_text = response.json().get("text", "No text extracted.")
                 st.success("Text extracted successfully!")
 
@@ -233,12 +232,13 @@ elif input_method == "Upload Image":
                 with st.expander("View Extracted Text"):
                     st.markdown(f"<div style='font-size: 14px;'>{extracted_text}</div>", unsafe_allow_html=True)
 
-                content = extracted_text  # Assign extracted text to content
+                content = extracted_text  # Store the extracted text for further processing
 
             else:
                 st.error(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.error(f"An error occurred: {e}")
+
 
 # Step 2: User Input for Questions
 if content:
