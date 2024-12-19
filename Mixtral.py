@@ -16,6 +16,7 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tess
 def extract_text_using_llama_vision(image_file):
     url = f"{base_url}/chat/completions"
     
+    # Ensure correct JSON payload format
     data = {
         "model": "llama-3.2-90b-vision-preview",
         "messages": [
@@ -27,12 +28,15 @@ def extract_text_using_llama_vision(image_file):
         "top_p": 0.9
     }
 
+    # Using BytesIO to correctly handle image data
     files = {
-        "image": image_file  # Pass the image file directly
+        "image": image_file.getvalue()  # Use `getvalue()` to extract binary data
     }
 
     try:
-        response = requests.post(url, headers=headers, data=data, files=files)
+        # Ensure correct `json` for payload and `files` for image data
+        response = requests.post(url, headers=headers, json=data, files=files)
+
         if response.status_code == 200:
             result = response.json()
             return result['choices'][0]['message']['content']
