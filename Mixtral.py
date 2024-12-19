@@ -8,6 +8,9 @@ import pytesseract
 from PIL import Image
 import json
 
+# Set the path to the Tesseract executable
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
 # Custom CSS for a more premium look
 st.markdown("""
     <style>
