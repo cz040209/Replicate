@@ -62,7 +62,8 @@ headers = {
 # Available models
 available_models = {
     "Mixtral 8x7b": "mixtral-8x7b-32768",
-    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile"
+    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile",
+    "Llama 90B Vision": "llama-90b-vision"
 }
 
 # Step 1: Function to Extract Text from PDF
@@ -149,9 +150,31 @@ def transcribe_audio(deepgram_api_key, audio_file):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during transcription: {e}"
 
+# Step 2: Function to Analyze Image using Llama 90B Vision Model
+def analyze_image_with_llama90b(image_url):
+    url = f"{base_url}/chat/completions"
+    data = {
+        "model": "llama-90b-vision",
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant. Analyze the following image."},
+            {"role": "user", "content": image_url}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 500,
+        "top_p": 0.9
+    }
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content']
+        else:
+            return f"Error {response.status_code}: {response.text}"
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred: {e}"
 
 # Input Method Selection
-input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio"])
+input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Image URL"])
 
 # Model selection - Available only for PDF and manual text input
 if input_method in ["Upload PDF", "Enter Text Manually"]:
@@ -241,6 +264,16 @@ elif input_method == "Upload Audio":
         transcript = transcribe_audio(deepgram_api_key, uploaded_audio)
         st.write("Transcription:")
         st.write(transcript)
+
+elif input_method == "Image URL":
+    image_url = st.text_input("Enter the image URL:")
+
+    if image_url:
+        # Analyze the image using Llama 90B Vision
+        st.write("Analyzing image with Llama 90B...")
+        analysis_result = analyze_image_with_llama90b(image_url)
+        st.write("Analysis Result:")
+        st.write(analysis_result)
 
 # Step 2: User Input for Questions
 if content:
