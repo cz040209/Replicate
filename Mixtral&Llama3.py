@@ -14,7 +14,6 @@ hf_token = "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"
 blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
 blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
 
-
 # Custom CSS for a more premium look
 st.markdown("""
     <style>
@@ -158,6 +157,19 @@ def transcribe_audio(deepgram_api_key, audio_file):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during transcription: {e}"
 
+# Step 1: Function to Extract Text from Image using BLIP-2
+def extract_text_from_image(image_file):
+    # Open image from uploaded file
+    image = Image.open(image_file)
+
+    # Preprocess the image for the BLIP-2 model
+    inputs = blip_processor(images=image, return_tensors="pt")
+
+    # Generate the caption (text) for the image
+    out = blip_model.generate(**inputs)
+    caption = blip_processor.decode(out[0], skip_special_tokens=True)
+
+    return caption
 
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
@@ -251,21 +263,7 @@ elif input_method == "Upload Audio":
         st.write("Transcription:")
         st.write(transcript)
 
-# Step 1: Function to Extract Text from Image using BLIP-2
-def extract_text_from_image(image_file):
-    # Open image from uploaded file
-    image = Image.open(image_file)
-
-    # Preprocess the image for the BLIP-2 model
-    inputs = blip_processor(images=image, return_tensors="pt")
-
-    # Generate the caption (text) for the image
-    out = blip_model.generate(**inputs)
-    caption = blip_processor.decode(out[0], skip_special_tokens=True)
-
-    return caption
-
-elif input_method == "Upload Image":
+if input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
@@ -282,7 +280,6 @@ elif input_method == "Upload Image":
             content = image_text
         except Exception as e:
             st.error(f"Error extracting text from image: {e}")
-
 
 # Step 2: User Input for Questions
 if content:
