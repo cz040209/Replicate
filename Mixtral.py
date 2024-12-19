@@ -1,3 +1,7 @@
+st.write(f"Groq API Key: {groq_api_key}")
+st.write(f"Deepgram API Key: {deepgram_api_key}")
+
+
 import requests
 import streamlit as st
 import PyPDF2
