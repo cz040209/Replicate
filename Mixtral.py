@@ -55,6 +55,8 @@ st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
 # Initialize interaction history in session state
 if "history" not in st.session_state:
     st.session_state.history = []
+if "selected_interaction" not in st.session_state:
+    st.session_state.selected_interaction = None
 
 # Step 1: Function to Extract Text from PDF
 def extract_text_from_pdf(pdf_file):
@@ -67,11 +69,20 @@ def extract_text_from_pdf(pdf_file):
 # Sidebar for interaction history
 st.sidebar.header("Interaction History")
 if st.session_state.history:
-    for i, interaction in enumerate(st.session_state.history):
-        if st.sidebar.button(f"Interaction {i+1}"):
-            st.write(f"Revisiting Interaction {i+1}")
-            st.write(f"Question: {interaction['question']}")
-            st.write(f"Response: {interaction['response']}")
+    interaction_options = [f"Interaction {i + 1}" for i in range(len(st.session_state.history))]
+    selected_index = st.sidebar.selectbox(
+        "Select an interaction to view details:",
+        options=interaction_options
+    )
+    if selected_index:
+        index = int(selected_index.split(" ")[1]) - 1
+        st.session_state.selected_interaction = st.session_state.history[index]
+
+# Display selected interaction in the sidebar
+if st.session_state.selected_interaction:
+    st.sidebar.subheader("Selected Interaction")
+    st.sidebar.write(f"**Question:** {st.session_state.selected_interaction['question']}")
+    st.sidebar.write(f"**Response:** {st.session_state.selected_interaction['response']}")
 
 # Model selection
 selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
