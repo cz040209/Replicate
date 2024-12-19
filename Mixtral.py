@@ -6,44 +6,6 @@ from gtts import gTTS  # Import gtts for text-to-speech
 import os
 import pytesseract
 from PIL import Image
-from io import BytesIO
-
-hf_api_key = st.secrets["hugging_face"]["api_key"]
-
-# Set the path to the Tesseract executable
-pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
-
-def extract_text_using_llama_vision(image_file):
-    url = f"{base_url}/chat/completions"
-    
-    # Ensure correct JSON payload format
-    data = {
-        "model": "llama-3.2-90b-vision-preview",
-        "messages": [
-            {"role": "system", "content": "Extract text from the following image."},
-            {"role": "user", "content": "Please analyze this image and extract any text."}
-        ],
-        "temperature": 0.7,
-        "max_tokens": 500,
-        "top_p": 0.9
-    }
-
-    # Using BytesIO to correctly handle image data
-    files = {
-        "image": image_file.getvalue()  # Use `getvalue()` to extract binary data
-    }
-
-    try:
-        # Ensure correct `json` for payload and `files` for image data
-        response = requests.post(url, headers=headers, json=data, files=files)
-
-        if response.status_code == 200:
-            result = response.json()
-            return result['choices'][0]['message']['content']
-        else:
-            return f"Error {response.status_code}: {response.text}"
-    except requests.exceptions.RequestException as e:
-        return f"An error occurred during image processing: {e}"
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -160,34 +122,10 @@ def translate_text(text, target_language, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
-# Function to generate image using Stable Diffusion API
-def generate_image_from_prompt(prompt):
-    image_api_url = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2"  # Stable Diffusion model URL
-    headers = {
-        "Authorization": f"Bearer {hf_api_key}"
-    }
-    payload = {
-        "inputs": prompt,
-        "options": {
-            "use_cache": False
-        }
-    }
-
-    try:
-        response = requests.post(image_api_url, headers=headers, json=payload)
-        if response.status_code == 200:
-            # Get the generated image URL from response
-            image_url = response.json()["data"][0]["url"]
-            return image_url
-        else:
-            return f"Error {response.status_code}: {response.text}"
-    except requests.exceptions.RequestException as e:
-        return f"An error occurred: {e}"
-
 # Streamlit UI
 
 # Input Method Selection
-input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image", "Generate Image from Text"])
+input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
 # Model selection - Available only for PDF and manual text input
 if input_method in ["Upload PDF", "Enter Text Manually"]:
@@ -268,17 +206,6 @@ elif input_method == "Enter Text Manually":
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
 
-elif input_method == "Generate Image from Text":
-    prompt = st.text_input("Enter a prompt to generate an image:")
-
-    if prompt:
-        st.write("Generating image from your prompt...")
-        image_url = generate_image_from_prompt(prompt)
-        if image_url.startswith("http"):
-            st.image(image_url, caption="Generated Image", use_column_width=True)
-        else:
-            st.error(image_url)  # Display error if the image generation fails
-
 elif input_method == "Upload Audio":
     uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
 
@@ -287,26 +214,23 @@ elif input_method == "Upload Audio":
         # Placeholder for future audio processing
         content = "Audio content will be processed here."
 
-elif input_method == "Upload Image":  # This should be aligned properly
+elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
-        st.write("Image uploaded. Extracting text using Llama-3.2-90b-vision-preview...")
-        
-        # Call the new function to extract text using Llama-3.2-90b-vision-preview
-        extracted_text = extract_text_using_llama_vision(uploaded_image)
-
-        if extracted_text:
+        st.write("Image uploaded. Extracting text using OCR...")
+        try:
+            image = Image.open(uploaded_image)
+            image_text = pytesseract.image_to_string(image)
             st.success("Text extracted successfully!")
 
             # Display extracted text with adjusted font size
             with st.expander("View Extracted Text"):
-                st.markdown(f"<div style='font-size: 14px;'>{extracted_text}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
 
-            content = extracted_text
-        else:
-            st.error("Error extracting text from the image.")
-
+            content = image_text
+        except Exception as e:
+            st.error(f"Error extracting text from image: {e}")
 
 # Step 2: User Input for Questions
 if content:
