@@ -7,8 +7,7 @@ import os
 import pytesseract
 from PIL import Image
 
-# Set up Hugging Face API key for Stable Diffusion
-hf_api_key = "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"  # Your Hugging Face Stable Diffusion API key
+hf_api_key = st.secrets["hugging_face"]["api_key"]
 
 # Set the path to the Tesseract executable
 pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
