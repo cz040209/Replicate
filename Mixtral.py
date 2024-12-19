@@ -94,7 +94,9 @@ def summarize_text(text, model_id):
         return f"An error occurred: {e}"
 
 # Streamlit UI
-st.title("PDF Question-Answering Chatbot")
+
+# Input Method Selection
+input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
 # Model selection
 selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
@@ -104,58 +106,82 @@ selected_model_id = available_models[selected_model_name]
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# File upload
-uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
+# Handle different input methods
+if input_method == "Upload PDF":
+    uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
 
-if uploaded_file:
-    # Extract text from the uploaded PDF
-    st.write("Extracting text from the uploaded PDF...")
-    pdf_text = extract_text_from_pdf(uploaded_file)
-    st.success("Text extracted successfully!")
+    if uploaded_file:
+        # Extract text from the uploaded PDF
+        st.write("Extracting text from the uploaded PDF...")
+        pdf_text = extract_text_from_pdf(uploaded_file)
+        st.success("Text extracted successfully!")
 
-    # Display extracted text with adjusted font size
-    with st.expander("View Extracted Text"):
-        st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
+        # Display extracted text with adjusted font size
+        with st.expander("View Extracted Text"):
+            st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
 
-    # Summarize the extracted text
-    if st.button("Summarize Text"):
-        st.write("Summarizing the text...")
-        summary = summarize_text(pdf_text, selected_model_id)
+        # Summarize the extracted text
+        if st.button("Summarize Text"):
+            st.write("Summarizing the text...")
+            summary = summarize_text(pdf_text, selected_model_id)
+            st.write("Summary:")
+            st.write(summary)
+
+        # Step 2: User Input for Questions
+        question = st.text_input("Ask a question about the PDF content:")
+
+        if question:
+            # Add user question to history
+            st.session_state.history.append(f"You: {question}")
+
+            # Use the extracted text and user question for Chat Completions
+            url = f"{base_url}/chat/completions"
+            data = {
+                "model": selected_model_id,
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant. Use the following PDF content to answer the user's questions."},
+                    {"role": "system", "content": pdf_text},
+                    {"role": "user", "content": question}
+                ],
+                "temperature": 0.7,
+                "max_tokens": 200,
+                "top_p": 0.9
+            }
+
+            try:
+                response = requests.post(url, headers=headers, json=data)
+                if response.status_code == 200:
+                    result = response.json()
+                    bot_response = result['choices'][0]['message']['content']
+                    st.session_state.history.append(f"Bot ({selected_model_name}): {bot_response}")
+                    st.write(f"Bot ({selected_model_name}): {bot_response}")
+                else:
+                    st.error(f"Error {response.status_code}: {response.text}")
+            except requests.exceptions.RequestException as e:
+                st.error(f"An error occurred: {e}")
+
+elif input_method == "Enter Text Manually":
+    manual_text = st.text_area("Enter your text manually:")
+    
+    if manual_text:
+        st.write("Summarizing the entered text...")
+        summary = summarize_text(manual_text, selected_model_id)
         st.write("Summary:")
         st.write(summary)
 
-    # Step 2: User Input for Questions
-    question = st.text_input("Ask a question about the PDF content:")
+elif input_method == "Upload Audio":
+    uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
 
-    if question:
-        # Add user question to history
-        st.session_state.history.append(f"You: {question}")
-        
-        # Use the extracted text and user question for Chat Completions
-        url = f"{base_url}/chat/completions"
-        data = {
-            "model": selected_model_id,
-            "messages": [
-                {"role": "system", "content": "You are a helpful assistant. Use the following PDF content to answer the user's questions."},
-                {"role": "system", "content": pdf_text},
-                {"role": "user", "content": question}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 200,
-            "top_p": 0.9
-        }
+    if uploaded_audio:
+        st.write("Audio file uploaded. Processing audio...") 
+        # Add your audio processing logic here
 
-        try:
-            response = requests.post(url, headers=headers, json=data)
-            if response.status_code == 200:
-                result = response.json()
-                bot_response = result['choices'][0]['message']['content']
-                st.session_state.history.append(f"Bot ({selected_model_name}): {bot_response}")
-                st.write(f"Bot ({selected_model_name}): {bot_response}")
-            else:
-                st.error(f"Error {response.status_code}: {response.text}")
-        except requests.exceptions.RequestException as e:
-            st.error(f"An error occurred: {e}")
+elif input_method == "Upload Image":
+    uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
+
+    if uploaded_image:
+        st.write("Image uploaded. Processing image...") 
+        # Add your image processing logic here
 
 # Display interaction history in the sidebar
 with st.sidebar:
