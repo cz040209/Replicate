@@ -4,6 +4,8 @@ import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
+import pytesseract
+from PIL import Image
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -212,13 +214,22 @@ elif input_method == "Upload Audio":
         # Placeholder for future audio processing
         content = "Audio content will be processed here."
 
+# Handle different input methods
 elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
-        st.write("Image uploaded. Processing image...")
-        # Placeholder for future image processing
-        content = "Image content will be processed here."
+        st.write("Image uploaded. Extracting text using OCR...")
+        try:
+            image = Image.open(uploaded_image)
+            image_text = pytesseract.image_to_string(image)
+            st.success("Text extracted successfully!")
+
+            # Display extracted text with adjusted font size
+            with st.expander("View Extracted Text"):
+                st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"Error extracting text from image: {e}")
 
 # Step 2: User Input for Questions
 if content:
