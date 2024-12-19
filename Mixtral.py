@@ -2,6 +2,9 @@ import requests
 import streamlit as st
 import PyPDF2
 from datetime import datetime
+from gtts import gTTS
+import os
+import io
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -117,6 +120,14 @@ def translate_text(text, target_language, model_id):
             return f"Translation error: {response.status_code}"
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
+
+# Function to Convert Text to Speech
+def text_to_speech(text):
+    tts = gTTS(text=text, lang='en')
+    speech_file = io.BytesIO()
+    tts.save(speech_file)
+    speech_file.seek(0)
+    return speech_file
 
 # Streamlit UI
 
@@ -254,6 +265,12 @@ if content:
                     translated_response = translate_text(bot_response, selected_language, selected_model_id)
                     st.write(f"Translated Response in {selected_language}:")
                     st.write(translated_response)
+
+                    # Convert the bot's response to speech
+                    speech_file = text_to_speech(bot_response)
+
+                    # Provide an audio player to listen to the response
+                    st.audio(speech_file, format='audio/mp3')
 
                 else:
                     st.write(f"Error {response.status_code}: {response.text}")
