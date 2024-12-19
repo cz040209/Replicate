@@ -18,6 +18,49 @@ available_models = {
     "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile"
 }
 
+# Custom CSS for styling
+st.markdown("""
+    <style>
+        .css-1d391kg {
+            background-color: #1c1f24;  /* Dark background */
+            color: white;
+            font-family: 'Arial', sans-serif;
+        }
+        .css-1v0m2ju {
+            background-color: #282c34;  /* Slightly lighter background */
+        }
+        .css-13ya6yb {
+            background-color: #61dafb;  /* Button color */
+            border-radius: 5px;
+            padding: 10px 20px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .css-10trblm {
+            font-size: 18px;
+            font-weight: bold;
+            color: #282c34;
+        }
+        .css-3t9iqy {
+            color: #61dafb;
+            font-size: 20px;
+        }
+        .botify-title {
+            font-family: 'Arial', sans-serif;
+            font-size: 48px;
+            font-weight: bold;
+            color: #61dafb;
+            text-align: center;
+            margin-top: 50px;
+            margin-bottom: 30px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Botify Title
+st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
+
 # Step 1: Function to Extract Text from PDF
 def extract_text_from_pdf(pdf_file):
     pdf_reader = PyPDF2.PdfReader(pdf_file)
@@ -25,9 +68,6 @@ def extract_text_from_pdf(pdf_file):
     for page in pdf_reader.pages:
         extracted_text += page.extract_text()
     return extracted_text
-
-# Streamlit UI
-st.title("PDF Question-Answering Chatbot")
 
 # Model selection
 selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
