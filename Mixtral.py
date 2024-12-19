@@ -7,6 +7,7 @@ import os
 import json
 from PIL import Image
 import easyocr  # Import EasyOCR for image-to-text conversion
+import numpy as np
 
 # Custom CSS for a more premium look
 st.markdown("""
