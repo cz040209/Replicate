@@ -214,7 +214,6 @@ elif input_method == "Upload Audio":
         # Placeholder for future audio processing
         content = "Audio content will be processed here."
 
-# Handle different input methods
 elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
@@ -228,6 +227,8 @@ elif input_method == "Upload Image":
             # Display extracted text with adjusted font size
             with st.expander("View Extracted Text"):
                 st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
+
+            content = image_text
         except Exception as e:
             st.error(f"Error extracting text from image: {e}")
 
