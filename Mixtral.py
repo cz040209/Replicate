@@ -57,10 +57,9 @@ api_key = st.secrets["groq_api"]["api_key"]
 # Base URL and headers for Groq API
 base_url = "https://api.groq.com/openai/v1"
 headers = {
-    "Authorization": f"Bearer {groqapi_key}",
+    "Authorization": f"Bearer {api_key}",  # Use api_key here, not groqapi_key
     "Content-Type": "application/json"
 }
-
 
 # Available models
 available_models = {
