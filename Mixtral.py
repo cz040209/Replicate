@@ -7,6 +7,7 @@ import os
 import pytesseract
 from PIL import Image
 import json
+import io
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -133,8 +134,11 @@ def transcribe_audio(deepgram_api_key, audio_file):
         "Authorization": f"Token {deepgram_api_key}",
     }
 
+    # Convert Streamlit uploaded audio file to binary data
+    audio_data = audio_file.getvalue()
+
     files = {
-        'file': audio_file,
+        'file': ('audio_file', audio_data),
     }
 
     try:
