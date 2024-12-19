@@ -176,8 +176,8 @@ if input_method == "Upload PDF":
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
 
-            # Convert summary to audio
-            tts = gTTS(text=translated_summary, lang='en')
+            # Convert summary to audio in English (not translated)
+            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
 
@@ -199,8 +199,8 @@ elif input_method == "Enter Text Manually":
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
 
-            # Convert summary to audio
-            tts = gTTS(text=translated_summary, lang='en')
+            # Convert summary to audio in English (not translated)
+            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
 
@@ -254,32 +254,25 @@ if content:
                 response = requests.post(url, headers=headers, json=data)
                 if response.status_code == 200:
                     result = response.json()
-                    bot_response = result['choices'][0]['message']['content']
+                    answer = result['choices'][0]['message']['content']
 
-                    # Update the interaction with bot's response
-                    interaction["response"] = bot_response
-                    st.session_state.history[-1] = interaction  # Update last interaction
+                    # Store bot's answer in the interaction history
+                    interaction["response"] = answer
+                    st.session_state.history[-1] = interaction
 
-                    st.write(f"Bot ({selected_model_name}): {bot_response}")
+                    # Display bot's response
+                    st.write(f"Bot's Answer: {answer}")
 
-                    # Translate the bot's response to the selected language
-                    translated_response = translate_text(bot_response, selected_language, selected_model_id)
-                    st.write(f"Translated Response in {selected_language}:")
-                    st.write(translated_response)
-
-                    # Convert the bot's response to audio
-                    tts = gTTS(text=translated_response, lang='en')
-                    tts.save("response.mp3")
-                    st.audio("response.mp3", format="audio/mp3")
-
+                    # Convert bot's answer to audio in English
+                    tts = gTTS(text=answer, lang='en')
+                    tts.save("bot_answer.mp3")
+                    st.audio("bot_answer.mp3", format="audio/mp3")
                 else:
-                    st.write(f"Error {response.status_code}: {response.text}")
+                    st.error(f"Error {response.status_code}: {response.text}")
             except requests.exceptions.RequestException as e:
-                st.write(f"An error occurred: {e}")
+                st.error(f"An error occurred: {e}")
 
-# Step 3: Display Chat History in Sidebar
-with st.sidebar:
-    st.write("### Interaction History:")
-    for interaction in st.session_state.history:
-        st.write(f"{interaction['time']} - {interaction['input_method']}: {interaction['question']}")
-        st.write(f"Bot: {interaction['response']}")
+# Display interaction history
+st.write("Interaction History:")
+for entry in st.session_state.history:
+    st.write(f"Time: {entry['time']} | Method: {entry['input_method']} | Question: {entry['question']} | Response: {entry['response']}")
