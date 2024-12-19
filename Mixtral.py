@@ -1,4 +1,3 @@
-Mixtral and Llama3 (correct)
 import requests
 import streamlit as st
 import PyPDF2
