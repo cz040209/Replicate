@@ -1,6 +1,3 @@
-import os
-print(os.environ["PATH"])
-
 import requests
 import streamlit as st
 import PyPDF2
@@ -10,6 +7,14 @@ import os
 import pytesseract
 from PIL import Image
 import json
+from transformers import BlipProcessor, BlipForConditionalGeneration
+
+# Hugging Face Token (BLIP-2)
+hf_token = "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"
+
+# Initialize BLIP-2 model
+processor = BlipProcessor.from_pretrained("Salesforce/blip-2", use_auth_token=hf_token)
+model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-2", use_auth_token=hf_token)
 
 # Set the path to the Tesseract executable
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
@@ -250,23 +255,23 @@ elif input_method == "Upload Audio":
         st.write("Transcription:")
         st.write(transcript)
 
-elif input_method == "Upload Image":
+if input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
-        st.write("Image uploaded. Extracting text using OCR...")
-        try:
-            image = Image.open(uploaded_image)
-            image_text = pytesseract.image_to_string(image)
-            st.success("Text extracted successfully!")
+        st.write("Image uploaded. Generating caption...")
 
-            # Display extracted text with adjusted font size
-            with st.expander("View Extracted Text"):
-                st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
+        # Open and process the image
+        image = Image.open(uploaded_image)
+        inputs = processor(images=image, return_tensors="pt")
 
-            content = image_text
-        except Exception as e:
-            st.error(f"Error extracting text from image: {e}")
+        # Generate caption using BLIP-2
+        output = model.generate(**inputs)
+        caption = processor.decode(output[0], skip_special_tokens=True)
+
+        st.write("Generated Caption:")
+        st.write(caption)
+
 
 # Step 2: User Input for Questions
 if content:
