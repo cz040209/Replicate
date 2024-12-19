@@ -65,12 +65,13 @@ available_models = {
     "Llama 3.2 90b Vision Preview": "llama-3.2-90b-vision-preview"
 }
 
+# Extract text from image function
 def extract_text_from_image(image_file):
     url = f"{base_url}/chat/completions"
     
     # Prepare the data payload (ensure it's properly structured)
     data = {
-        "model": "llama-3.2-90b-vision-preview",  # Correct model ID
+        "model": "llama-3.2-90b-vision-preview",  # Correct model ID for image processing
         "messages": [
             {"role": "system", "content": "Extract text from the uploaded image."},
             {"role": "user", "content": "Please process this image."}
@@ -193,8 +194,10 @@ if content:
     question = st.text_input("Ask a question about the content:")
 
     if question:
-        # Ensure that the model ID is selected
-        if selected_model_id:
+        # Check if a model is selected before proceeding
+        if not selected_model_id:
+            st.error("Please select a model before asking questions.")
+        else:
             # Create interaction dictionary with timestamp
             interaction = {
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
