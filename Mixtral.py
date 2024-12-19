@@ -37,17 +37,8 @@ st.markdown("""
             font-size: 16px;
             font-weight: bold;
         }
-        .css-10trblm {
-            font-size: 18px;
-            font-weight: bold;
-            color: #282c34;
-        }
-        .css-3t9iqy {
-            color: #61dafb;
-            font-size: 20px;
-        }
         .botify-title {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Arial', sans-serif';
             font-size: 48px;
             font-weight: bold;
             color: #61dafb;
@@ -61,6 +52,10 @@ st.markdown("""
 # Botify Title
 st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
 
+# Initialize interaction history in session state
+if "history" not in st.session_state:
+    st.session_state.history = []
+
 # Step 1: Function to Extract Text from PDF
 def extract_text_from_pdf(pdf_file):
     pdf_reader = PyPDF2.PdfReader(pdf_file)
@@ -68,6 +63,15 @@ def extract_text_from_pdf(pdf_file):
     for page in pdf_reader.pages:
         extracted_text += page.extract_text()
     return extracted_text
+
+# Sidebar for interaction history
+st.sidebar.header("Interaction History")
+if st.session_state.history:
+    for i, interaction in enumerate(st.session_state.history):
+        if st.sidebar.button(f"Interaction {i+1}"):
+            st.write(f"Revisiting Interaction {i+1}")
+            st.write(f"Question: {interaction['question']}")
+            st.write(f"Response: {interaction['response']}")
 
 # Model selection
 selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
@@ -110,6 +114,12 @@ if uploaded_file:
                 result = response.json()
                 bot_response = result['choices'][0]['message']['content']
                 st.write(f"Bot ({selected_model_name}): {bot_response}")
+                
+                # Save interaction to history
+                st.session_state.history.append({
+                    "question": question,
+                    "response": bot_response
+                })
             else:
                 st.error(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
