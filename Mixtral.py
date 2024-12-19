@@ -63,7 +63,7 @@ headers = {
 available_models = {
     "Mixtral 8x7b": "mixtral-8x7b-32768",
     "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile",
-    "Llama 90B Vision": "llama-90b-vision"
+    "llama-3.2-90b-vision-preview": "llama-3.2-90b-vision-preview"
 }
 
 # Step 1: Function to Extract Text from PDF
@@ -154,7 +154,7 @@ def transcribe_audio(deepgram_api_key, audio_file):
 def analyze_image_with_llama90b(image_url):
     url = f"{base_url}/chat/completions"
     data = {
-        "model": "llama-90b-vision",
+        "model": "llama-3.2-90b-vision-preview",
         "messages": [
             {"role": "system", "content": "You are a helpful assistant. Analyze the following image."},
             {"role": "user", "content": image_url}
