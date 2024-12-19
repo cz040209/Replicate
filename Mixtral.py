@@ -255,23 +255,54 @@ elif input_method == "Upload Audio":
         # Placeholder for future audio processing
         content = "Audio content will be processed here."
 
+# Function to extract text from an image using Llama-3.2-90b-vision-preview model
+def extract_text_using_llama_vision(image_file):
+    url = f"{base_url}/chat/completions"
+    data = {
+        "model": "llama-3.2-90b-vision-preview",
+        "messages": [
+            {"role": "system", "content": "Extract text from the following image."},
+            {"role": "user", "content": "Please analyze this image and extract any text."}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 500,
+        "top_p": 0.9
+    }
+    
+    files = {
+        "image": image_file  # Upload the image file directly
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data, files=files)
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content']  # Extracted text from the image
+        else:
+            return f"Error {response.status_code}: {response.text}"
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred during image processing: {e}"
+
+# Update in the image upload section
 elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
-        st.write("Image uploaded. Extracting text using OCR...")
-        try:
-            image = Image.open(uploaded_image)
-            image_text = pytesseract.image_to_string(image)
+        st.write("Image uploaded. Extracting text using Llama-3.2-90b-vision-preview...")
+        
+        # Call the new function to extract text using Llama-3.2-90b-vision-preview
+        extracted_text = extract_text_using_llama_vision(uploaded_image)
+
+        if extracted_text:
             st.success("Text extracted successfully!")
 
             # Display extracted text with adjusted font size
             with st.expander("View Extracted Text"):
-                st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size: 14px;'>{extracted_text}</div>", unsafe_allow_html=True)
 
-            content = image_text
-        except Exception as e:
-            st.error(f"Error extracting text from image: {e}")
+            content = extracted_text
+        else:
+            st.error("Error extracting text from the image.")
 
 # Step 2: User Input for Questions
 if content:
