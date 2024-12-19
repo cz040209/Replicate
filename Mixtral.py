@@ -51,50 +51,101 @@ st.markdown("""
 # Botify Title
 st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
 
-# Set up Rev AI API Key (make sure you have this stored in Streamlit secrets)
-rev_ai_api_key = "02iieflkd7QpA8_34YnJJQo2s81yjoLo5Fj9QUAXxdTUYvrfFErqT9m1CM6yVuXmMJdnNzSo4HU5XxEanm-Qe-TzGnjEY"
+# Set up API Key from secrets
+api_key = st.secrets["groq_api"]["api_key"]
 
-# Function to Convert Audio to Text Using Rev AI API
-def transcribe_audio(rev_ai_api_key, audio_file):
-    url = "https://api.rev.ai/speechtotext/v1beta/jobs"
+# Base URL and headers for Groq API
+base_url = "https://api.groq.com/openai/v1"
+headers = {
+    "Authorization": f"Bearer {api_key}",  # Use api_key here, not groqapi_key
+    "Content-Type": "application/json"
+}
+
+# Available models
+available_models = {
+    "Mixtral 8x7b": "mixtral-8x7b-32768",
+    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile"
+}
+
+# Step 1: Function to Extract Text from PDF
+def extract_text_from_pdf(pdf_file):
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    extracted_text = ""
+    for page in pdf_reader.pages:
+        extracted_text += page.extract_text()
+    return extracted_text
+
+# Function to Summarize the Text
+def summarize_text(text, model_id):
+    url = f"{base_url}/chat/completions"
+    data = {
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant. Summarize the following text:"},
+            {"role": "user", "content": text}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 300,
+        "top_p": 0.9
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content']
+        else:
+            return f"Error {response.status_code}: {response.text}"
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred: {e}"
+
+# Function to Translate Text Using the Selected Model
+def translate_text(text, target_language, model_id):
+    url = f"{base_url}/chat/completions"
+    data = {
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": f"Translate the following text into {target_language}."},
+            {"role": "user", "content": text}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 300,
+        "top_p": 0.9
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content']
+        else:
+            return f"Translation error: {response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred during translation: {e}"
+
+# Set up Deepgram API Key from secrets (Make sure it is added to your secrets)
+deepgram_api_key = st.secrets["deepgram_api"]["api_key"]
+
+# Function to Convert Audio to Text Using Deepgram API
+def transcribe_audio(deepgram_api_key, audio_file):
+    url = "https://api.deepgram.com/v1/listen"
     headers = {
-        "Authorization": f"Bearer {rev_ai_api_key}",
-        "Content-Type": "application/json"
+        "Authorization": f"Token {deepgram_api_key}",
     }
 
     # Get the file data directly from the uploaded file
     audio_data = audio_file.getvalue()
 
-    # Upload the file to Rev AI (First, we upload it to get the job ID)
+    # Send the file with the correct MIME type
     files = {
         'file': ('audio_file', audio_data, audio_file.type),  # File with its MIME type
     }
 
     try:
-        # Step 1: Upload the audio to Rev AI for processing
         response = requests.post(url, headers=headers, files=files)
         if response.status_code == 200:
-            job_data = response.json()
-            job_id = job_data["id"]
-            st.write(f"Audio uploaded successfully! Job ID: {job_id}")
-
-            # Step 2: Check the status of the job until it's done
-            status_url = f"https://api.rev.ai/speechtotext/v1beta/jobs/{job_id}"
-            while True:
-                status_response = requests.get(status_url, headers=headers)
-                status_data = status_response.json()
-
-                if status_data['status'] == 'completed':
-                    # Once completed, get the transcript URL
-                    transcript_url = status_data['results']['transcript_url']
-                    transcript_response = requests.get(transcript_url)
-                    transcript = transcript_response.text
-                    return transcript
-                elif status_data['status'] == 'failed':
-                    return f"Error: Transcription job failed. {status_data['error']}"
-                else:
-                    st.write("Processing... Please wait a moment.")
-
+            result = response.json()
+            return result['results']['channels'][0]['alternatives'][0]['transcript']
         else:
             return f"Error {response.status_code}: {response.text}"
     except requests.exceptions.RequestException as e:
@@ -104,17 +155,92 @@ def transcribe_audio(rev_ai_api_key, audio_file):
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
+# Model selection - Available only for PDF and manual text input
+if input_method in ["Upload PDF", "Enter Text Manually"]:
+    selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
+    selected_model_id = available_models[selected_model_name]
+
+# Sidebar for interaction history
+if "history" not in st.session_state:
+    st.session_state.history = []
+
 # Initialize content variable
 content = ""
 
+# Language selection for translation
+languages = [
+    "English", "Spanish", "French", "Italian", "Portuguese", "Romanian", 
+    "German", "Dutch", "Swedish", "Danish", "Norwegian", "Russian", 
+    "Polish", "Czech", "Ukrainian", "Serbian", "Chinese", "Japanese", 
+    "Korean", "Hindi", "Bengali", "Arabic", "Hebrew", "Persian", 
+    "Punjabi", "Tamil", "Telugu", "Swahili", "Amharic"
+]
+selected_language = st.selectbox("Choose your preferred language for output", languages)
+
 # Handle different input methods
-if input_method == "Upload Audio":
+if input_method == "Upload PDF":
+    uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
+
+    if uploaded_file:
+        # Extract text from the uploaded PDF
+        st.write("Extracting text from the uploaded PDF...")
+        pdf_text = extract_text_from_pdf(uploaded_file)
+        st.success("Text extracted successfully!")
+
+        # Display extracted text with adjusted font size
+        with st.expander("View Extracted Text"):
+            st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
+
+        # Assign extracted text to content for chat
+        content = pdf_text
+
+        # Summarize the extracted text only when the button is clicked
+        if st.button("Summarize Text"):
+            st.write("Summarizing the text...")
+            summary = summarize_text(pdf_text, selected_model_id)
+            st.write("Summary:")
+            st.write(summary)
+
+            # Translate the summary to the selected language
+            translated_summary = translate_text(summary, selected_language, selected_model_id)
+            st.write(f"Translated Summary in {selected_language}:")
+            st.write(translated_summary)
+
+            # Convert summary to audio in English (not translated)
+            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+            tts.save("response.mp3")
+            st.audio("response.mp3", format="audio/mp3")
+
+elif input_method == "Enter Text Manually":
+    manual_text = st.text_area("Enter your text manually:")
+
+    if manual_text:
+        # Assign entered text to content for chat
+        content = manual_text
+
+        if st.button("Summarize Text"):
+            st.write("Summarizing the entered text...")
+            summary = summarize_text(manual_text, selected_model_id)
+            st.write("Summary:")
+            st.write(summary)
+
+            # Translate the summary to the selected language
+            translated_summary = translate_text(summary, selected_language, selected_model_id)
+            st.write(f"Translated Summary in {selected_language}:")
+            st.write(translated_summary)
+
+            # Convert summary to audio in English (not translated)
+            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+            tts.save("response.mp3")
+            st.audio("response.mp3", format="audio/mp3")
+
+elif input_method == "Upload Audio":
     uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
 
     if uploaded_audio:
         st.write("Audio file uploaded. Processing audio...")
-        # Use Rev AI for transcription
-        transcript = transcribe_audio(rev_ai_api_key, uploaded_audio)
+        # Use Deepgram for transcription
+        transcript = transcribe_audio(deepgram_api_key, uploaded_audio)
         st.write("Transcription:")
         st.write(transcript)
 
@@ -185,11 +311,7 @@ if content:
             except requests.exceptions.RequestException as e:
                 st.write(f"An error occurred: {e}")
 
-# Initialize session state history if it doesn't exist
-if "history" not in st.session_state:
-    st.session_state.history = []
-
-# Later in your code, you can safely use st.session_state.history
+# Display interaction history in the sidebar
 if st.session_state.history:
     st.sidebar.header("Interaction History")
     for idx, interaction in enumerate(st.session_state.history):
