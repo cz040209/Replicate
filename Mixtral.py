@@ -139,7 +139,7 @@ if "history" not in st.session_state:
 # Initialize content variable
 content = ""
 
-# Language selection for translation (You can modify the languages list as needed)
+# Language selection for translation
 languages = [
     "English", "Spanish", "French", "Italian", "Portuguese", "Romanian", 
     "German", "Dutch", "Swedish", "Danish", "Norwegian", "Russian", 
@@ -154,32 +154,25 @@ if input_method == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
 
     if uploaded_file:
-        # Extract text from the uploaded PDF
         st.write("Extracting text from the uploaded PDF...")
         pdf_text = extract_text_from_pdf(uploaded_file)
         st.success("Text extracted successfully!")
 
-        # Display extracted text with adjusted font size
         with st.expander("View Extracted Text"):
             st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
 
-        # Assign extracted text to content for chat
         content = pdf_text
 
-        # Summarize the extracted text only when the button is clicked
         if st.button("Summarize Text"):
-            st.write("Summarizing the text...")
             summary = summarize_text(pdf_text, selected_model_id)
             st.write("Summary:")
             st.write(summary)
 
-            # Translate the summary to the selected language
             translated_summary = translate_text(summary, selected_language, selected_model_id)
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
 
-            # Convert summary to audio in English (not translated)
-            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+            tts = gTTS(text=summary, lang='en')
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
 
@@ -187,22 +180,18 @@ elif input_method == "Enter Text Manually":
     manual_text = st.text_area("Enter your text manually:")
 
     if manual_text:
-        # Assign entered text to content for chat
         content = manual_text
 
         if st.button("Summarize Text"):
-            st.write("Summarizing the entered text...")
             summary = summarize_text(manual_text, selected_model_id)
             st.write("Summary:")
             st.write(summary)
 
-            # Translate the summary to the selected language
             translated_summary = translate_text(summary, selected_language, selected_model_id)
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
 
-            # Convert summary to audio in English (not translated)
-            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+            tts = gTTS(text=summary, lang='en')
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
 
@@ -211,7 +200,6 @@ elif input_method == "Upload Audio":
 
     if uploaded_audio:
         st.write("Audio file uploaded. Processing audio...")
-        # Placeholder for future audio processing
         content = "Audio content will be processed here."
 
 elif input_method == "Upload Image":
@@ -224,7 +212,6 @@ elif input_method == "Upload Image":
             image_text = pytesseract.image_to_string(image)
             st.success("Text extracted successfully!")
 
-            # Display extracted text with adjusted font size
             with st.expander("View Extracted Text"):
                 st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
 
@@ -237,19 +224,15 @@ if content:
     question = st.text_input("Ask a question about the content:")
 
     if question:
-        # Create interaction dictionary with timestamp
         interaction = {
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "input_method": input_method,
             "question": question,
-            "response": "",
-            "content_preview": content[:100]  # Show a preview of the content (first 100 characters)
+            "response": ""
         }
-        # Add user question to history
         st.session_state.history.append(interaction)
 
         if content:
-            # Send the question and content to the API for response
             url = f"{base_url}/chat/completions"
             data = {
                 "model": selected_model_id,
@@ -268,27 +251,23 @@ if content:
                 if response.status_code == 200:
                     result = response.json()
                     answer = result['choices'][0]['message']['content']
-
-                    # Store bot's answer in the interaction history
                     interaction["response"] = answer
+                    st.write("Answer:")
+                    st.write(answer)
+
+                    # Update history with the response
                     st.session_state.history[-1] = interaction
-
-                    # Display bot's response
-                    st.write("Answer:", answer)
-
                 else:
-                    st.write(f"Error {response.status_code}: {response.text}")
+                    st.error(f"Error {response.status_code}: {response.text}")
             except requests.exceptions.RequestException as e:
-                st.write(f"An error occurred: {e}")
+                st.error(f"An error occurred: {e}")
 
-# Display interaction history in the sidebar
-if st.session_state.history:
-    st.sidebar.header("Interaction History")
-    for idx, interaction in enumerate(st.session_state.history):
-        st.sidebar.markdown(f"**{interaction['time']}**")
-        st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")
-        st.sidebar.markdown(f"**Question**: {interaction['question']}")
-        st.sidebar.markdown(f"**Response**: {interaction['response']}")
-        st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
-        st.sidebar.markdown("---")
+# Step 3: Show Interaction History with Clickable Entries
+st.sidebar.title("Interaction History")
 
+# Display clickable history in the sidebar
+for idx, item in enumerate(st.session_state.history):
+    if st.sidebar.button(f"Interaction {idx + 1} ({item['time']})"):
+        st.write(f"**Input Method**: {item['input_method']}")
+        st.write(f"**Question**: {item['question']}")
+        st.write(f"**Response**: {item['response']}")
