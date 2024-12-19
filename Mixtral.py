@@ -4,8 +4,6 @@ import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
-import pytesseract
-from PIL import Image
 import json
 
 # Custom CSS for a more premium look
@@ -153,7 +151,7 @@ def transcribe_audio(deepgram_api_key, audio_file):
 
 
 # Input Method Selection
-input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
+input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio"])
 
 # Model selection - Available only for PDF and manual text input
 if input_method in ["Upload PDF", "Enter Text Manually"]:
@@ -243,24 +241,6 @@ elif input_method == "Upload Audio":
         transcript = transcribe_audio(deepgram_api_key, uploaded_audio)
         st.write("Transcription:")
         st.write(transcript)
-
-elif input_method == "Upload Image":
-    uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
-
-    if uploaded_image:
-        st.write("Image uploaded. Extracting text using OCR...")
-        try:
-            image = Image.open(uploaded_image)
-            image_text = pytesseract.image_to_string(image)
-            st.success("Text extracted successfully!")
-
-            # Display extracted text with adjusted font size
-            with st.expander("View Extracted Text"):
-                st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
-
-            content = image_text
-        except Exception as e:
-            st.error(f"Error extracting text from image: {e}")
 
 # Step 2: User Input for Questions
 if content:
