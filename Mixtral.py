@@ -2,6 +2,49 @@ import requests
 import streamlit as st
 import PyPDF2
 
+# Custom CSS for a more premium look
+st.markdown("""
+    <style>
+        .css-1d391kg {
+            background-color: #1c1f24;  /* Dark background */
+            color: white;
+            font-family: 'Arial', sans-serif;
+        }
+        .css-1v0m2ju {
+            background-color: #282c34;  /* Slightly lighter background */
+        }
+        .css-13ya6yb {
+            background-color: #61dafb;  /* Button color */
+            border-radius: 5px;
+            padding: 10px 20px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .css-10trblm {
+            font-size: 18px;
+            font-weight: bold;
+            color: #282c34;
+        }
+        .css-3t9iqy {
+            color: #61dafb;
+            font-size: 20px;
+        }
+        .botify-title {
+            font-family: 'Arial', sans-serif;
+            font-size: 48px;
+            font-weight: bold;
+            color: #61dafb;
+            text-align: center;
+            margin-top: 50px;
+            margin-bottom: 30px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Botify Title
+st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
+
 # Set up API Key from secrets
 api_key = st.secrets["groq_api"]["api_key"]
 
