@@ -5,6 +5,7 @@ from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
 import json
+from PIL import Image
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -151,13 +152,15 @@ def transcribe_audio(deepgram_api_key, audio_file):
         return f"An error occurred during transcription: {e}"
 
 # Step 2: Function to Analyze Image using Llama 90B Vision Model
-def analyze_image_with_llama90b(image_url):
+def analyze_image_with_llama90b(image_file):
+    # Upload the image file to a server or send it directly to an API
+    # Here we send it directly to Llama Vision model
     url = f"{base_url}/chat/completions"
     data = {
         "model": "llama-3.2-90b-vision-preview",
         "messages": [
             {"role": "system", "content": "You are a helpful assistant. Analyze the following image."},
-            {"role": "user", "content": image_url}
+            {"role": "user", "content": "<Image Binary or URL>"}
         ],
         "temperature": 0.7,
         "max_tokens": 500,
@@ -174,7 +177,7 @@ def analyze_image_with_llama90b(image_url):
         return f"An error occurred: {e}"
 
 # Input Method Selection
-input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Image URL"])
+input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
 # Model selection - Available only for PDF and manual text input
 if input_method in ["Upload PDF", "Enter Text Manually"]:
@@ -265,13 +268,17 @@ elif input_method == "Upload Audio":
         st.write("Transcription:")
         st.write(transcript)
 
-elif input_method == "Image URL":
-    image_url = st.text_input("Enter the image URL:")
+elif input_method == "Upload Image":
+    uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
-    if image_url:
-        # Analyze the image using Llama 90B Vision
-        st.write("Analyzing image with Llama 90B...")
-        analysis_result = analyze_image_with_llama90b(image_url)
+    if uploaded_image:
+        st.write("Image uploaded. Analyzing image...")
+        # Open the uploaded image for display
+        img = Image.open(uploaded_image)
+        st.image(img, caption="Uploaded Image", use_column_width=True)
+
+        # Analyze the uploaded image with Llama Vision Model
+        analysis_result = analyze_image_with_llama90b(uploaded_image)
         st.write("Analysis Result:")
         st.write(analysis_result)
 
