@@ -260,8 +260,9 @@ if content:
             except requests.exceptions.RequestException as e:
                 st.write(f"An error occurred: {e}")
 
-# Step 3: Display Chat History
-st.write("### Interaction History:")
-for interaction in st.session_state.history:
-    st.write(f"{interaction['time']} - {interaction['input_method']}: {interaction['question']}")
-    st.write(f"Bot: {interaction['response']}")
+# Step 3: Display Chat History in Sidebar
+with st.sidebar:
+    st.write("### Interaction History:")
+    for interaction in st.session_state.history:
+        st.write(f"{interaction['time']} - {interaction['input_method']}: {interaction['question']}")
+        st.write(f"Bot: {interaction['response']}")
