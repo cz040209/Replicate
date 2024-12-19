@@ -123,6 +123,9 @@ def translate_text(text, target_language, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
+# Set up Deepgram API Key from secrets (Make sure it is added to your secrets)
+deepgram_api_key = st.secrets["deepgram_api"]["api_key"]
+
 # Function to Convert Audio to Text Using Deepgram API
 def transcribe_audio(deepgram_api_key, audio_file):
     url = "https://api.deepgram.com/v1/listen"
@@ -143,8 +146,6 @@ def transcribe_audio(deepgram_api_key, audio_file):
             return f"Error {response.status_code}: {response.text}"
     except requests.exceptions.RequestException as e:
         return f"An error occurred during transcription: {e}"
-
-# Streamlit UI
 
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
