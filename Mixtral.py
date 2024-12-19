@@ -98,13 +98,10 @@ def summarize_text(text, model_id):
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
-# Display model selection only for PDF and Manual Text input
+# Model selection - Available only for PDF and manual text input
 if input_method in ["Upload PDF", "Enter Text Manually"]:
     selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
     selected_model_id = available_models[selected_model_name]
-else:
-    selected_model_name = None
-    selected_model_id = None
 
 # Sidebar for interaction history
 if "history" not in st.session_state:
@@ -131,44 +128,6 @@ if input_method == "Upload PDF":
             st.write("Summary:")
             st.write(summary)
 
-        # Step 2: User Input for Questions
-        question = st.text_input("Ask a question about the PDF content:")
-
-        if question:
-            # Add user question to history only if it isn't already present
-            if not any(message.startswith("You:") for message in st.session_state.history):
-                st.session_state.history.append(f"You: {question}")
-
-            # Use the extracted text and user question for Chat Completions
-            url = f"{base_url}/chat/completions"
-            data = {
-                "model": selected_model_id,
-                "messages": [
-                    {"role": "system", "content": "You are a helpful assistant. Use the following PDF content to answer the user's questions."},
-                    {"role": "system", "content": pdf_text},
-                    {"role": "user", "content": question}
-                ],
-                "temperature": 0.7,
-                "max_tokens": 200,
-                "top_p": 0.9
-            }
-
-            try:
-                response = requests.post(url, headers=headers, json=data)
-                if response.status_code == 200:
-                    result = response.json()
-                    bot_response = result['choices'][0]['message']['content']
-                    
-                    # Only add bot response if it hasn't been added already
-                    if not any(message.startswith("Bot") for message in st.session_state.history):
-                        st.session_state.history.append(f"Bot ({selected_model_name}): {bot_response}")
-                    
-                    st.write(f"Bot ({selected_model_name}): {bot_response}")
-                else:
-                    st.error(f"Error {response.status_code}: {response.text}")
-            except requests.exceptions.RequestException as e:
-                st.error(f"An error occurred: {e}")
-
 elif input_method == "Enter Text Manually":
     manual_text = st.text_area("Enter your text manually:")
 
@@ -191,6 +150,60 @@ elif input_method == "Upload Image":
     if uploaded_image:
         st.write("Image uploaded. Processing image...")
         # Add your image processing logic here
+
+# Step 2: User Input for Questions
+question = st.text_input("Ask a question about the content:")
+
+if question:
+    # Add user question to history only if it isn't already present
+    if not any(message.startswith("You:") for message in st.session_state.history):
+        st.session_state.history.append(f"You: {question}")
+
+    # Use the appropriate content based on input method
+    content = ""
+
+    if input_method == "Upload PDF" and uploaded_file:
+        content = pdf_text
+    elif input_method == "Enter Text Manually" and manual_text:
+        content = manual_text
+    # For Audio and Image, add logic to process and extract content (if applicable)
+    elif input_method == "Upload Audio":
+        # Audio processing logic here
+        content = "Audio content processing not yet implemented."
+    elif input_method == "Upload Image":
+        # Image processing logic here
+        content = "Image content processing not yet implemented."
+
+    if content:
+        # Send the question and content to the API for response
+        url = f"{base_url}/chat/completions"
+        data = {
+            "model": selected_model_id,
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                {"role": "system", "content": content},
+                {"role": "user", "content": question}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 200,
+            "top_p": 0.9
+        }
+
+        try:
+            response = requests.post(url, headers=headers, json=data)
+            if response.status_code == 200:
+                result = response.json()
+                bot_response = result['choices'][0]['message']['content']
+                
+                # Only add bot response if it hasn't been added already
+                if not any(message.startswith("Bot") for message in st.session_state.history):
+                    st.session_state.history.append(f"Bot ({selected_model_name}): {bot_response}")
+                
+                st.write(f"Bot ({selected_model_name}): {bot_response}")
+            else:
+                st.error(f"Error {response.status_code}: {response.text}")
+        except requests.exceptions.RequestException as e:
+            st.error(f"An error occurred: {e}")
 
 # Display interaction history in the sidebar
 with st.sidebar:
