@@ -107,6 +107,9 @@ if input_method in ["Upload PDF", "Enter Text Manually"]:
 if "history" not in st.session_state:
     st.session_state.history = []
 
+# Initialize content variable
+content = ""
+
 # Handle different input methods
 if input_method == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
@@ -121,6 +124,9 @@ if input_method == "Upload PDF":
         with st.expander("View Extracted Text"):
             st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
 
+        # Assign extracted text to content for chat
+        content = pdf_text
+
         # Summarize the extracted text
         if st.button("Summarize Text"):
             st.write("Summarizing the text...")
@@ -132,6 +138,9 @@ elif input_method == "Enter Text Manually":
     manual_text = st.text_area("Enter your text manually:")
 
     if manual_text:
+        # Assign entered text to content for chat
+        content = manual_text
+
         st.write("Summarizing the entered text...")
         summary = summarize_text(manual_text, selected_model_id)
         st.write("Summary:")
@@ -142,12 +151,16 @@ elif input_method == "Upload Audio":
 
     if uploaded_audio:
         st.write("Audio file uploaded. Processing audio...")
+        # Placeholder for future audio processing
+        content = "Audio content will be processed here."
 
 elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
         st.write("Image uploaded. Processing image...")
+        # Placeholder for future image processing
+        content = "Image content will be processed here."
 
 # Step 2: User Input for Questions
 question = st.text_input("Ask a question about the content:")
@@ -155,14 +168,6 @@ question = st.text_input("Ask a question about the content:")
 if question:
     # Add user question to history only if it isn't already present
     st.session_state.history.append(f"You: {question}")
-
-    # Use the appropriate content based on input method
-    content = ""
-
-    if input_method == "Upload PDF" and uploaded_file:
-        content = pdf_text
-    elif input_method == "Enter Text Manually" and manual_text:
-        content = manual_text
 
     if content:
         # Send the question and content to the API for response
