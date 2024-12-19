@@ -127,7 +127,7 @@ if input_method == "Upload PDF":
         # Assign extracted text to content for chat
         content = pdf_text
 
-        # Summarize the extracted text
+        # Summarize the extracted text only when the button is clicked
         if st.button("Summarize Text"):
             st.write("Summarizing the text...")
             summary = summarize_text(pdf_text, selected_model_id)
@@ -141,10 +141,11 @@ elif input_method == "Enter Text Manually":
         # Assign entered text to content for chat
         content = manual_text
 
-        st.write("Summarizing the entered text...")
-        summary = summarize_text(manual_text, selected_model_id)
-        st.write("Summary:")
-        st.write(summary)
+        if st.button("Summarize Text"):
+            st.write("Summarizing the entered text...")
+            summary = summarize_text(manual_text, selected_model_id)
+            st.write("Summary:")
+            st.write(summary)
 
 elif input_method == "Upload Audio":
     uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
