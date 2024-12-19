@@ -4,12 +4,60 @@ import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
+import pytesseract
+from PIL import Image
 
 # Set up Hugging Face API key for Stable Diffusion
 hf_api_key = "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"  # Your Hugging Face Stable Diffusion API key
 
-# Set up API Key for Groq API
-api_key = st.secrets["groq_api"]["api_key"]  # Assuming the key is stored in secrets
+# Set the path to the Tesseract executable
+pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+
+# Custom CSS for a more premium look
+st.markdown("""
+    <style>
+        .css-1d391kg {
+            background-color: #1c1f24;  /* Dark background */
+            color: white;
+            font-family: 'Arial', sans-serif;
+        }
+        .css-1v0m2ju {
+            background-color: #282c34;  /* Slightly lighter background */
+        }
+        .css-13ya6yb {
+            background-color: #61dafb;  /* Button color */
+            border-radius: 5px;
+            padding: 10px 20px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .css-10trblm {
+            font-size: 18px;
+            font-weight: bold;
+            color: #282c34;
+        }
+        .css-3t9iqy {
+            color: #61dafb;
+            font-size: 20px;
+        }
+        .botify-title {
+            font-family: 'Arial', sans-serif;
+            font-size: 48px;
+            font-weight: bold;
+            color: #61dafb;
+            text-align: center;
+            margin-top: 50px;
+            margin-bottom: 30px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Botify Title
+st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
+
+# Set up API Key from secrets
+api_key = st.secrets["groq_api"]["api_key"]
 
 # Base URL and headers for Groq API
 base_url = "https://api.groq.com/openai/v1"
@@ -21,8 +69,7 @@ headers = {
 # Available models
 available_models = {
     "Mixtral 8x7b": "mixtral-8x7b-32768",
-    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile",
-    "Llama 3.2 90b Vision Preview": "llama-3.2-90b-vision-preview"  # New model for image-to-text
+    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile"
 }
 
 # Step 1: Function to Extract Text from PDF
@@ -212,33 +259,19 @@ elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
-        st.write("Image uploaded. Extracting text using Groq's Llama-3.2-90b-Vision model...")
-
-        # Prepare to send the image to the Groq API
-        image_to_text_url = f"{base_url}/models/llama-3.2-90b-vision-preview/generate"
-        
+        st.write("Image uploaded. Extracting text using OCR...")
         try:
-            # Ensure we send the image using the 'files' parameter
-            files = {"file": uploaded_image}  # Groq expects the image in the "file" field
-            
-            response = requests.post(image_to_text_url, headers=headers, files=files)
-            
-            if response.status_code == 200:
-                # Handle the response from Groq API
-                extracted_text = response.json().get("text", "No text extracted.")
-                st.success("Text extracted successfully!")
+            image = Image.open(uploaded_image)
+            image_text = pytesseract.image_to_string(image)
+            st.success("Text extracted successfully!")
 
-                # Display extracted text with adjusted font size
-                with st.expander("View Extracted Text"):
-                    st.markdown(f"<div style='font-size: 14px;'>{extracted_text}</div>", unsafe_allow_html=True)
+            # Display extracted text with adjusted font size
+            with st.expander("View Extracted Text"):
+                st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
 
-                content = extracted_text  # Store the extracted text for further processing
-
-            else:
-                st.error(f"Error {response.status_code}: {response.text}")
-        except requests.exceptions.RequestException as e:
-            st.error(f"An error occurred: {e}")
-
+            content = image_text
+        except Exception as e:
+            st.error(f"Error extracting text from image: {e}")
 
 # Step 2: User Input for Questions
 if content:
@@ -294,8 +327,16 @@ if st.session_state.history:
     st.sidebar.header("Interaction History")
     for idx, interaction in enumerate(st.session_state.history):
         st.sidebar.markdown(f"**{interaction['time']}**")
-        st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")        
-        st.sidebar.markdown(f"**Question**: {interaction['question']}")        
-        st.sidebar.markdown(f"**Response**: {interaction['response']}")        
-        st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")        
-        st.sidebar.markdown("---")
+        st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")
+        st.sidebar.markdown(f"**Question**: {interaction['question']}")
+        st.sidebar.markdown(f"**Response**: {interaction['response']}")
+        st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
+        st.sidebar.markdown("---"), change the OCR to   {
+      "id": "llama-3.2-90b-vision-preview",
+      "object": "model",
+      "created": 1727226914,
+      "owned_by": "Meta",
+      "active": true,
+      "context_window": 8192,
+      "public_apps": null
+    }
