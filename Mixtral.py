@@ -2,10 +2,10 @@ import requests
 import streamlit as st
 import PyPDF2
 
-# Set up API Key
+# Set up API Key from secrets
 api_key = st.secrets["groq_api"]["api_key"]
 
-# Base URL and headers
+# Base URL and headers for Groq API
 base_url = "https://api.groq.com/openai/v1"
 headers = {
     "Authorization": f"Bearer {api_key}",
