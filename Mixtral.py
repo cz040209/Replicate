@@ -110,9 +110,8 @@ def extract_text_from_pdf(pdf_file):
         extracted_text += page.extract_text()
     return extracted_text
 
-# Function to Summarize Text using the selected model
 def summarize_text(text, selected_model):
-    url = "https://api.groq.com/v1/chat/completions"  # Assuming this is the Groq API endpoint
+    url = "https://api.groq.com/openai/v1/models"  # Corrected endpoint for Groq models
     headers = {
         "Authorization": f"Bearer {groq_api_key}",
         "Content-Type": "application/json"
@@ -142,9 +141,8 @@ def summarize_text(text, selected_model):
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
 
-# Function to Translate Text using the selected model
 def translate_text(text, target_language, selected_model):
-    url = "https://api.groq.com/v1/chat/completions"  # Assuming this is the Groq API endpoint
+    url = "https://api.groq.com/openai/v1/models"  # Corrected endpoint for Groq models
     headers = {
         "Authorization": f"Bearer {groq_api_key}",
         "Content-Type": "application/json"
