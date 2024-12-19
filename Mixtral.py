@@ -65,24 +65,23 @@ available_models = {
     "Llama 3.2 90b Vision Preview": "llama-3.2-90b-vision-preview"
 }
 
-# Step 1: Function to process the image using Groq's vision model (OCR)
 def extract_text_from_image(image_file):
-    url = f"{base_url}/chat/completions"  # Keep using the correct endpoint
+    url = f"{base_url}/chat/completions"
     
     # Prepare the data payload (ensure it's properly structured)
     data = {
-        "model": "llama-3.2-90b-vision-preview",  # The correct model ID
+        "model": "llama-3.2-90b-vision-preview",  # Correct model ID
         "messages": [
             {"role": "system", "content": "Extract text from the uploaded image."},
             {"role": "user", "content": "Please process this image."}
         ]
     }
     
-    # The image file must be uploaded as part of the 'files' parameter, not in 'json'
+    # Prepare the files parameter for the image upload
     files = {
-        "image": image_file
+        "file": image_file  # The correct key here is 'file', not 'image'
     }
-    
+
     try:
         # Send the request to Groq's API for vision processing
         response = requests.post(url, headers=headers, json=data, files=files)
@@ -94,6 +93,7 @@ def extract_text_from_image(image_file):
             return f"Error {response.status_code}: {response.text}"
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
+
 
 
 # Function to Summarize the Text
