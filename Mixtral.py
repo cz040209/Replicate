@@ -1,7 +1,3 @@
-st.write(f"Groq API Key: {groq_api_key}")
-st.write(f"Deepgram API Key: {deepgram_api_key}")
-
-
 import requests
 import streamlit as st
 import PyPDF2
@@ -11,6 +7,11 @@ import os
 import pytesseract
 from PIL import Image
 import json
+
+st.write(f"Groq API Key: {groq_api_key}")
+st.write(f"Deepgram API Key: {deepgram_api_key}")
+
+
 
 # Custom CSS for a more premium look
 st.markdown("""
