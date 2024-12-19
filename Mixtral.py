@@ -242,7 +242,8 @@ if content:
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "input_method": input_method,
             "question": question,
-            "response": ""
+            "response": "",
+            "content_preview": content[:100]  # Show a preview of the content (first 100 characters)
         }
         # Add user question to history
         st.session_state.history.append(interaction)
@@ -273,30 +274,21 @@ if content:
                     st.session_state.history[-1] = interaction
 
                     # Display bot's response
-                    st.write(f"Bot's Answer: {answer}")
-
-                    # Translate the bot's answer to the selected language
-                    translated_answer = translate_text(answer, selected_language, selected_model_id)
-                    st.write(f"Translated Answer in {selected_language}:")
-                    st.write(translated_answer)
-
-                    # Convert bot's answer to speech
-                    tts = gTTS(text=answer, lang='en')
-                    tts.save("bot_response.mp3")
-                    st.audio("bot_response.mp3", format="audio/mp3")
+                    st.write("Answer:", answer)
 
                 else:
                     st.write(f"Error {response.status_code}: {response.text}")
             except requests.exceptions.RequestException as e:
                 st.write(f"An error occurred: {e}")
 
-# Step 3: Display interaction history on the left sidebar
+# Display interaction history in the sidebar
 if st.session_state.history:
     st.sidebar.header("Interaction History")
-    for interaction in st.session_state.history:
-        st.sidebar.write(f"Time: {interaction['time']}")
-        st.sidebar.write(f"Method: {interaction['input_method']}")
-        st.sidebar.write(f"Question: {interaction['question']}")
-        st.sidebar.write(f"Answer: {interaction['response']}")
-        st.sidebar.write("-" * 50)
+    for idx, interaction in enumerate(st.session_state.history):
+        st.sidebar.markdown(f"**{interaction['time']}**")
+        st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")
+        st.sidebar.markdown(f"**Question**: {interaction['question']}")
+        st.sidebar.markdown(f"**Response**: {interaction['response']}")
+        st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
+        st.sidebar.markdown("---")
 
