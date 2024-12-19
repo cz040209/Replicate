@@ -4,7 +4,7 @@ import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
-from transformers import BlipProcessor, BlipForConditionalGeneration
+from transformers import BlipProcessor, BlipForConditionalGeneration, Wav2Vec2ForCTC, Wav2Vec2Processor
 import torch
 from PIL import Image
 import json
@@ -13,6 +13,10 @@ import json
 hf_token = "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"
 blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
 blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
+
+# Hugging Face Wav2Vec 2.0 Setup for Audio-to-Text
+wav2vec_processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
+wav2vec_model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -129,33 +133,25 @@ def translate_text(text, target_language, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
-# Set up Deepgram API Key from secrets (Make sure it is added to your secrets)
-deepgram_api_key = st.secrets["deepgram_api"]["api_key"]
+# Function to Convert Audio to Text Using Wav2Vec 2.0
+def transcribe_audio(audio_file):
+    # Load the audio file into a format Wav2Vec can process
+    audio_data = audio_file.read()
+    # Convert to waveform
+    audio_tensor = torch.tensor(audio_data)
 
-# Function to Convert Audio to Text Using Deepgram API
-def transcribe_audio(deepgram_api_key, audio_file):
-    url = "https://api.deepgram.com/v1/listen"
-    headers = {
-        "Authorization": f"Token {deepgram_api_key}",
-    }
+    # Process the audio with the Wav2Vec2 processor
+    inputs = wav2vec_processor(audio_tensor, return_tensors="pt", sampling_rate=16000)
 
-    # Get the file data directly from the uploaded file
-    audio_data = audio_file.getvalue()
+    # Forward pass through the model
+    with torch.no_grad():
+        logits = wav2vec_model(input_values=inputs.input_values).logits
 
-    # Send the file with the correct MIME type
-    files = {
-        'file': ('audio_file', audio_data, audio_file.type),  # File with its MIME type
-    }
+    # Decode the prediction to text
+    predicted_ids = torch.argmax(logits, dim=-1)
+    transcription = wav2vec_processor.batch_decode(predicted_ids)
 
-    try:
-        response = requests.post(url, headers=headers, files=files)
-        if response.status_code == 200:
-            result = response.json()
-            return result['results']['channels'][0]['alternatives'][0]['transcript']
-        else:
-            return f"Error {response.status_code}: {response.text}"
-    except requests.exceptions.RequestException as e:
-        return f"An error occurred during transcription: {e}"
+    return transcription[0]
 
 # Step 2: Function to Extract Text from Image using BLIP-2
 def extract_text_from_image(image_file):
@@ -261,8 +257,9 @@ elif input_method == "Upload Audio":
 
     if uploaded_audio:
         st.write("Audio file uploaded. Processing audio...")
-        # Use Deepgram for transcription
-        transcript = transcribe_audio(deepgram_api_key, uploaded_audio)
+
+        # Transcribe using Wav2Vec 2.0
+        transcript = transcribe_audio(uploaded_audio)
         st.write("Transcription:")
         st.write(transcript)
 
