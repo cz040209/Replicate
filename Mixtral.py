@@ -4,8 +4,6 @@ import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
-import pytesseract
-from PIL import Image
 import json
 from transformers import BlipProcessor, BlipForConditionalGeneration
 
@@ -15,9 +13,6 @@ hf_token = "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"
 # Initialize BLIP-2 model
 processor = BlipProcessor.from_pretrained("Salesforce/blip-2", use_auth_token=hf_token)
 model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-2", use_auth_token=hf_token)
-
-# Set the path to the Tesseract executable
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -327,7 +322,7 @@ if st.session_state.history:
     st.sidebar.header("Interaction History")
     for idx, interaction in enumerate(st.session_state.history):
         st.sidebar.markdown(f"**{interaction['time']}**")
-        st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")
+        st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}") 
         st.sidebar.markdown(f"**Question**: {interaction['question']}")
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
