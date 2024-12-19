@@ -94,6 +94,30 @@ def summarize_text(text, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
 
+# Function to Translate Text Using the Selected Model
+def translate_text(text, model_id):
+    url = f"{base_url}/chat/completions"
+    data = {
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant. Translate the following text to the selected language."},
+            {"role": "user", "content": text}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 300,
+        "top_p": 0.9
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content']
+        else:
+            return f"Translation error: {response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred during translation: {e}"
+
 # Streamlit UI
 
 # Input Method Selection
@@ -110,6 +134,16 @@ if "history" not in st.session_state:
 
 # Initialize content variable
 content = ""
+
+# Language selection for translation (You can modify the languages list as needed)
+languages = [
+    "English", "Spanish", "French", "Italian", "Portuguese", "Romanian", 
+    "German", "Dutch", "Swedish", "Danish", "Norwegian", "Russian", 
+    "Polish", "Czech", "Ukrainian", "Serbian", "Chinese", "Japanese", 
+    "Korean", "Hindi", "Bengali", "Arabic", "Hebrew", "Persian", 
+    "Punjabi", "Tamil", "Telugu", "Swahili", "Amharic"
+]
+selected_language = st.selectbox("Choose your preferred language for output", languages)
 
 # Handle different input methods
 if input_method == "Upload PDF":
@@ -135,6 +169,11 @@ if input_method == "Upload PDF":
             st.write("Summary:")
             st.write(summary)
 
+            # Translate the summary to the selected language
+            translated_summary = translate_text(summary, selected_model_id)
+            st.write(f"Translated Summary in {selected_language}:")
+            st.write(translated_summary)
+
 elif input_method == "Enter Text Manually":
     manual_text = st.text_area("Enter your text manually:")
 
@@ -147,6 +186,11 @@ elif input_method == "Enter Text Manually":
             summary = summarize_text(manual_text, selected_model_id)
             st.write("Summary:")
             st.write(summary)
+
+            # Translate the summary to the selected language
+            translated_summary = translate_text(summary, selected_model_id)
+            st.write(f"Translated Summary in {selected_language}:")
+            st.write(translated_summary)
 
 elif input_method == "Upload Audio":
     uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
@@ -205,28 +249,19 @@ if content:
                     st.session_state.history[-1] = interaction  # Update last interaction
 
                     st.write(f"Bot ({selected_model_name}): {bot_response}")
+
+                    # Translate the bot's response to the selected language
+                    translated_response = translate_text(bot_response, selected_model_id)
+                    st.write(f"Translated Response in {selected_language}:")
+                    st.write(translated_response)
+
                 else:
-                    st.error(f"Error {response.status_code}: {response.text}")
+                    st.write(f"Error {response.status_code}: {response.text}")
             except requests.exceptions.RequestException as e:
-                st.error(f"An error occurred: {e}")
-    else:
-        st.warning("Please enter a question to ask about the content.")
+                st.write(f"An error occurred: {e}")
 
-else:
-    st.warning("Please upload content (PDF, Text, Audio, or Image) before asking questions.")
-
-# Display interaction history in the sidebar
-with st.sidebar:
-    st.subheader("Interaction History")
-    if st.session_state.history:
-        for idx, interaction in enumerate(st.session_state.history):
-            if isinstance(interaction, dict):
-                st.write(f"Interaction {idx + 1} ({interaction['time']}):")
-                st.write(f"Input Method: {interaction['input_method']}")
-                st.write(f"Question: {interaction['question']}")
-                st.write(f"Bot Response: {interaction.get('response', 'No response yet')}")
-                st.write("---")
-            else:
-                st.write(f"Invalid interaction data: {interaction}")
-    else:
-        st.write("No interactions yet.")
+# Step 3: Display Chat History
+st.write("### Interaction History:")
+for interaction in st.session_state.history:
+    st.write(f"{interaction['time']} - {interaction['input_method']}: {interaction['question']}")
+    st.write(f"Bot: {interaction['response']}")
