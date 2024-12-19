@@ -163,41 +163,47 @@ elif input_method == "Upload Image":
         content = "Image content will be processed here."
 
 # Step 2: User Input for Questions
-question = st.text_input("Ask a question about the content:")
+if content:
+    question = st.text_input("Ask a question about the content:")
 
-if question:
-    # Add user question to history only if it isn't already present
-    st.session_state.history.append(f"You: {question}")
+    if question:
+        # Add user question to history only if it isn't already present
+        st.session_state.history.append(f"You: {question}")
 
-    if content:
-        # Send the question and content to the API for response
-        url = f"{base_url}/chat/completions"
-        data = {
-            "model": selected_model_id,
-            "messages": [
-                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                {"role": "system", "content": content},
-                {"role": "user", "content": question}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 200,
-            "top_p": 0.9
-        }
+        if content:
+            # Send the question and content to the API for response
+            url = f"{base_url}/chat/completions"
+            data = {
+                "model": selected_model_id,
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                    {"role": "system", "content": content},
+                    {"role": "user", "content": question}
+                ],
+                "temperature": 0.7,
+                "max_tokens": 200,
+                "top_p": 0.9
+            }
 
-        try:
-            response = requests.post(url, headers=headers, json=data)
-            if response.status_code == 200:
-                result = response.json()
-                bot_response = result['choices'][0]['message']['content']
-                
-                # Add bot response to history
-                st.session_state.history.append(f"Bot ({selected_model_name}): {bot_response}")
-                
-                st.write(f"Bot ({selected_model_name}): {bot_response}")
-            else:
-                st.error(f"Error {response.status_code}: {response.text}")
-        except requests.exceptions.RequestException as e:
-            st.error(f"An error occurred: {e}")
+            try:
+                response = requests.post(url, headers=headers, json=data)
+                if response.status_code == 200:
+                    result = response.json()
+                    bot_response = result['choices'][0]['message']['content']
+
+                    # Add bot response to history
+                    st.session_state.history.append(f"Bot ({selected_model_name}): {bot_response}")
+
+                    st.write(f"Bot ({selected_model_name}): {bot_response}")
+                else:
+                    st.error(f"Error {response.status_code}: {response.text}")
+            except requests.exceptions.RequestException as e:
+                st.error(f"An error occurred: {e}")
+    else:
+        st.warning("Please enter a question to ask about the content.")
+
+else:
+    st.warning("Please upload content (PDF, Text, Audio, or Image) before asking questions.")
 
 # Display interaction history in the sidebar
 with st.sidebar:
