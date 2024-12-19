@@ -1,8 +1,11 @@
+Mixtral and Llama3
 import requests
 import streamlit as st
+import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
+import pytesseract
 from PIL import Image
 
 # Custom CSS for a more premium look
@@ -61,46 +64,19 @@ headers = {
 # Available models
 available_models = {
     "Mixtral 8x7b": "mixtral-8x7b-32768",
-    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile",
-    "Llama 3.2 90b Vision Preview": "llama-3.2-90b-vision-preview"
+    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile"
 }
 
-# Function to Extract Text from Image
-def extract_text_from_image(image_file):
-    url = f"{base_url}/chat/completions"
-    
-    # Prepare the data payload for image processing
-    data = {
-        "model": "llama-3.2-90b-vision-preview",  # Correct model for image processing
-        "messages": [
-            {"role": "system", "content": "Extract text from the uploaded image."},
-            {"role": "user", "content": "Please process this image."}
-        ]
-    }
-    
-    # Prepare the files parameter for the image upload
-    files = {
-        "file": image_file  # Correct key for the file parameter
-    }
+# Step 1: Function to Extract Text from PDF
+def extract_text_from_pdf(pdf_file):
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    extracted_text = ""
+    for page in pdf_reader.pages:
+        extracted_text += page.extract_text()
+    return extracted_text
 
-    try:
-        # Send request for image processing
-        response = requests.post(url, headers=headers, json=data, files=files)
-        
-        if response.status_code == 200:
-            result = response.json()
-            return result['choices'][0]['message']['content']
-        else:
-            return f"Error {response.status_code}: {response.text}"
-    except requests.exceptions.RequestException as e:
-        return f"An error occurred: {e}"
-
-# Function to Summarize Text
-def summarize_text(text, model_choice):
-    model_id = available_models.get(model_choice)
-    if not model_id:
-        return "Selected model not found."
-
+# Function to Summarize the Text
+def summarize_text(text, model_id):
     url = f"{base_url}/chat/completions"
     data = {
         "model": model_id,
@@ -123,12 +99,8 @@ def summarize_text(text, model_choice):
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
 
-# Function to Translate Text
-def translate_text(text, target_language, model_choice):
-    model_id = available_models.get(model_choice)
-    if not model_id:
-        return "Selected model not found."
-
+# Function to Translate Text Using the Selected Model
+def translate_text(text, target_language, model_id):
     url = f"{base_url}/chat/completions"
     data = {
         "model": model_id,
@@ -151,42 +123,15 @@ def translate_text(text, target_language, model_choice):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
-# Function for Chat (Answering questions)
-def chat_with_content(content, question, model_choice):
-    model_id = available_models.get(model_choice)
-    if not model_id:
-        return "Selected model not found."
+# Streamlit UI
 
-    url = f"{base_url}/chat/completions"
-    data = {
-        "model": model_id,
-        "messages": [
-            {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-            {"role": "system", "content": content},
-            {"role": "user", "content": question}
-        ],
-        "temperature": 0.7,
-        "max_tokens": 200,
-        "top_p": 0.9
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        if response.status_code == 200:
-            result = response.json()
-            return result['choices'][0]['message']['content']
-        else:
-            return f"Error {response.status_code}: {response.text}"
-    except requests.exceptions.RequestException as e:
-        return f"An error occurred: {e}"
-
-# Streamlit UI for Input Method Selection
+# Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
 # Model selection - Available only for PDF and manual text input
-selected_model_name = None
 if input_method in ["Upload PDF", "Enter Text Manually"]:
     selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
+    selected_model_id = available_models[selected_model_name]
 
 # Sidebar for interaction history
 if "history" not in st.session_state:
@@ -206,13 +151,78 @@ languages = [
 selected_language = st.selectbox("Choose your preferred language for output", languages)
 
 # Handle different input methods
-if input_method == "Upload Image":
+if input_method == "Upload PDF":
+    uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
+
+    if uploaded_file:
+        # Extract text from the uploaded PDF
+        st.write("Extracting text from the uploaded PDF...")
+        pdf_text = extract_text_from_pdf(uploaded_file)
+        st.success("Text extracted successfully!")
+
+        # Display extracted text with adjusted font size
+        with st.expander("View Extracted Text"):
+            st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
+
+        # Assign extracted text to content for chat
+        content = pdf_text
+
+        # Summarize the extracted text only when the button is clicked
+        if st.button("Summarize Text"):
+            st.write("Summarizing the text...")
+            summary = summarize_text(pdf_text, selected_model_id)
+            st.write("Summary:")
+            st.write(summary)
+
+            # Translate the summary to the selected language
+            translated_summary = translate_text(summary, selected_language, selected_model_id)
+            st.write(f"Translated Summary in {selected_language}:")
+            st.write(translated_summary)
+
+            # Convert summary to audio in English (not translated)
+            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+            tts.save("response.mp3")
+            st.audio("response.mp3", format="audio/mp3")
+
+elif input_method == "Enter Text Manually":
+    manual_text = st.text_area("Enter your text manually:")
+
+    if manual_text:
+        # Assign entered text to content for chat
+        content = manual_text
+
+        if st.button("Summarize Text"):
+            st.write("Summarizing the entered text...")
+            summary = summarize_text(manual_text, selected_model_id)
+            st.write("Summary:")
+            st.write(summary)
+
+            # Translate the summary to the selected language
+            translated_summary = translate_text(summary, selected_language, selected_model_id)
+            st.write(f"Translated Summary in {selected_language}:")
+            st.write(translated_summary)
+
+            # Convert summary to audio in English (not translated)
+            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+            tts.save("response.mp3")
+            st.audio("response.mp3", format="audio/mp3")
+
+elif input_method == "Upload Audio":
+    uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
+
+    if uploaded_audio:
+        st.write("Audio file uploaded. Processing audio...")
+        # Placeholder for future audio processing
+        content = "Audio content will be processed here."
+
+elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
-        st.write("Image uploaded. Extracting text using Groq OCR model...")
+        st.write("Image uploaded. Extracting text using OCR...")
         try:
-            image_text = extract_text_from_image(uploaded_image)
+            image = Image.open(uploaded_image)
+            image_text = pytesseract.image_to_string(image)
             st.success("Text extracted successfully!")
 
             # Display extracted text with adjusted font size
@@ -228,27 +238,49 @@ if content:
     question = st.text_input("Ask a question about the content:")
 
     if question:
-        # Check if a model is selected before proceeding
-        if not selected_model_name:
-            st.error("Please select a model before asking questions.")
-        else:
-            # Add the user question to history and process it
-            interaction = {
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "input_method": input_method,
-                "question": question,
-                "response": "",
-                "content_preview": content[:100] if content else "No content available"
+        # Create interaction dictionary with timestamp
+        interaction = {
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "input_method": input_method,
+            "question": question,
+            "response": "",
+            "content_preview": content[:100] if content else "No content available"  # Ensure content_preview is always set
+        }
+        # Add user question to history
+        st.session_state.history.append(interaction)
+
+        if content:
+            # Send the question and content to the API for response
+            url = f"{base_url}/chat/completions"
+            data = {
+                "model": selected_model_id,
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                    {"role": "system", "content": content},
+                    {"role": "user", "content": question}
+                ],
+                "temperature": 0.7,
+                "max_tokens": 200,
+                "top_p": 0.9
             }
-            st.session_state.history.append(interaction)
 
-            # Use the selected model name to process the question
-            answer = chat_with_content(content, question, selected_model_name)
+            try:
+                response = requests.post(url, headers=headers, json=data)
+                if response.status_code == 200:
+                    result = response.json()
+                    answer = result['choices'][0]['message']['content']
 
-            # Display the answer
-            interaction["response"] = answer
-            st.session_state.history[-1] = interaction
-            st.write("Answer:", answer)
+                    # Store bot's answer in the interaction history
+                    interaction["response"] = answer
+                    st.session_state.history[-1] = interaction
+
+                    # Display bot's response
+                    st.write("Answer:", answer)
+
+                else:
+                    st.write(f"Error {response.status_code}: {response.text}")
+            except requests.exceptions.RequestException as e:
+                st.write(f"An error occurred: {e}")
 
 # Display interaction history in the sidebar
 if st.session_state.history:
