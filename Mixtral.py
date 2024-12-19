@@ -243,7 +243,7 @@ if content:
             "input_method": input_method,
             "question": question,
             "response": "",
-            "content_preview": content[:100]  # Show a preview of the content (first 100 characters)
+            "content_preview": content[:100] if content else "No content available"  # Ensure content_preview is always set
         }
         # Add user question to history
         st.session_state.history.append(interaction)
@@ -291,4 +291,3 @@ if st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
-
