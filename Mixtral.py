@@ -10,6 +10,10 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 # Hugging Face Token (BLIP-2)
 hf_token = "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"
 
+# Initialize the session state for history if not already initialized
+if "history" not in st.session_state:
+    st.session_state.history = []
+
 # Initialize BLIP-2 model
 processor = BlipProcessor.from_pretrained("Salesforce/blip-2", use_auth_token=hf_token)
 model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-2", use_auth_token=hf_token)
