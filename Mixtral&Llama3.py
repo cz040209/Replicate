@@ -157,7 +157,7 @@ def transcribe_audio(deepgram_api_key, audio_file):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during transcription: {e}"
 
-# Step 1: Function to Extract Text from Image using BLIP-2
+# Step 2: Function to Extract Text from Image using BLIP-2
 def extract_text_from_image(image_file):
     # Open image from uploaded file
     image = Image.open(image_file)
@@ -340,3 +340,4 @@ if st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
+
