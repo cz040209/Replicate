@@ -251,7 +251,21 @@ elif input_method == "Upload Audio":
         st.write("Transcription:")
         st.write(transcript)
 
-if input_method == "Upload Image":
+# Step 1: Function to Extract Text from Image using BLIP-2
+def extract_text_from_image(image_file):
+    # Open image from uploaded file
+    image = Image.open(image_file)
+
+    # Preprocess the image for the BLIP-2 model
+    inputs = blip_processor(images=image, return_tensors="pt")
+
+    # Generate the caption (text) for the image
+    out = blip_model.generate(**inputs)
+    caption = blip_processor.decode(out[0], skip_special_tokens=True)
+
+    return caption
+
+elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
@@ -269,19 +283,6 @@ if input_method == "Upload Image":
         except Exception as e:
             st.error(f"Error extracting text from image: {e}")
 
-# Step 1: Function to Extract Text from Image using BLIP-2
-def extract_text_from_image(image_file):
-    # Open image from uploaded file
-    image = Image.open(image_file)
-
-    # Preprocess the image for the BLIP-2 model
-    inputs = blip_processor(images=image, return_tensors="pt")
-
-    # Generate the caption (text) for the image
-    out = blip_model.generate(**inputs)
-    caption = blip_processor.decode(out[0], skip_special_tokens=True)
-
-    return caption
 
 # Step 2: User Input for Questions
 if content:
