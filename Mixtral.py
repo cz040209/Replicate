@@ -8,8 +8,9 @@ import pytesseract
 from PIL import Image
 import json
 
-import sys
-st.write(f"Python executable: {sys.executable}")
+import os
+print(os.environ["PATH"])
+
 
 
 # Set the path to the Tesseract executable
