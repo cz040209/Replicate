@@ -7,3 +7,4 @@ Pillow
 pytz
 python-dotenv
 openai
+pydub
