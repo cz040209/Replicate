@@ -185,7 +185,11 @@ if content:
             except requests.exceptions.RequestException as e:
                 st.write(f"An error occurred: {e}")
 
-# Display interaction history in the sidebar
+# Initialize session state history if it doesn't exist
+if "history" not in st.session_state:
+    st.session_state.history = []
+
+# Later in your code, you can safely use st.session_state.history
 if st.session_state.history:
     st.sidebar.header("Interaction History")
     for idx, interaction in enumerate(st.session_state.history):
