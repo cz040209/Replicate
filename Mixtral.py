@@ -82,7 +82,7 @@ def summarize_text(text, model_id):
         "max_tokens": 300,
         "top_p": 0.9
     }
-    
+
     try:
         response = requests.post(url, headers=headers, json=data)
         if response.status_code == 200:
@@ -131,8 +131,9 @@ if input_method == "Upload PDF":
         question = st.text_input("Ask a question about the PDF content:")
 
         if question:
-            # Add user question to history
-            st.session_state.history.append(f"You: {question}")
+            # Add user question to history only if it isn't already present
+            if not any(message.startswith("You:") for message in st.session_state.history):
+                st.session_state.history.append(f"You: {question}")
 
             # Use the extracted text and user question for Chat Completions
             url = f"{base_url}/chat/completions"
@@ -153,7 +154,11 @@ if input_method == "Upload PDF":
                 if response.status_code == 200:
                     result = response.json()
                     bot_response = result['choices'][0]['message']['content']
-                    st.session_state.history.append(f"Bot ({selected_model_name}): {bot_response}")
+                    
+                    # Only add bot response if it hasn't been added already
+                    if not any(message.startswith("Bot") for message in st.session_state.history):
+                        st.session_state.history.append(f"Bot ({selected_model_name}): {bot_response}")
+                    
                     st.write(f"Bot ({selected_model_name}): {bot_response}")
                 else:
                     st.error(f"Error {response.status_code}: {response.text}")
@@ -162,7 +167,7 @@ if input_method == "Upload PDF":
 
 elif input_method == "Enter Text Manually":
     manual_text = st.text_area("Enter your text manually:")
-    
+
     if manual_text:
         st.write("Summarizing the entered text...")
         summary = summarize_text(manual_text, selected_model_id)
@@ -173,14 +178,14 @@ elif input_method == "Upload Audio":
     uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
 
     if uploaded_audio:
-        st.write("Audio file uploaded. Processing audio...") 
+        st.write("Audio file uploaded. Processing audio...")
         # Add your audio processing logic here
 
 elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
-        st.write("Image uploaded. Processing image...") 
+        st.write("Image uploaded. Processing image...")
         # Add your image processing logic here
 
 # Display interaction history in the sidebar
