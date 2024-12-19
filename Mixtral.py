@@ -263,16 +263,22 @@ if content:
                     # Display bot's response
                     st.write(f"Bot's Answer: {answer}")
 
-                    # Convert bot's answer to audio in English
+                    # Convert bot's answer to speech
                     tts = gTTS(text=answer, lang='en')
-                    tts.save("bot_answer.mp3")
-                    st.audio("bot_answer.mp3", format="audio/mp3")
-                else:
-                    st.error(f"Error {response.status_code}: {response.text}")
-            except requests.exceptions.RequestException as e:
-                st.error(f"An error occurred: {e}")
+                    tts.save("bot_response.mp3")
+                    st.audio("bot_response.mp3", format="audio/mp3")
 
-# Display interaction history
-st.write("Interaction History:")
-for entry in st.session_state.history:
-    st.write(f"Time: {entry['time']} | Method: {entry['input_method']} | Question: {entry['question']} | Response: {entry['response']}")
+                else:
+                    st.write(f"Error {response.status_code}: {response.text}")
+            except requests.exceptions.RequestException as e:
+                st.write(f"An error occurred: {e}")
+
+# Step 3: Display interaction history on the left sidebar
+if st.session_state.history:
+    st.sidebar.header("Interaction History")
+    for interaction in st.session_state.history:
+        st.sidebar.write(f"Time: {interaction['time']}")
+        st.sidebar.write(f"Method: {interaction['input_method']}")
+        st.sidebar.write(f"Question: {interaction['question']}")
+        st.sidebar.write(f"Answer: {interaction['response']}")
+        st.sidebar.write("-" * 50)
