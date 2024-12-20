@@ -8,12 +8,11 @@ from transformers import BlipProcessor, BlipForConditionalGeneration, Wav2Vec2Fo
 import torch
 from PIL import Image
 import json
-import torchaudio
 
 # Hugging Face BLIP-2 Setup
 hf_token = "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"
-blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
-blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
+blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
+blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
 
 # Hugging Face Wav2Vec 2.0 Setup for Audio-to-Text
 wav2vec_processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
@@ -134,17 +133,10 @@ def translate_text(text, target_language, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
+# Function to Convert Audio to Text Using Wav2Vec 2.0
 def transcribe_audio(audio_file):
-    torchaudio.set_audio_backend("sox_io")  # Set backend to sox_io
-
-    # Read the file as a byte stream
-    audio_bytes = audio_file.read()
-    
-    # Convert the byte stream to a file-like object for torchaudio
-    audio_buffer = io.BytesIO(audio_bytes)
-
     # Load the audio file with torchaudio
-    waveform, sample_rate = torchaudio.load(audio_buffer)
+    waveform, sample_rate = torchaudio.load(audio_file)
 
     # Resample if necessary (Wav2Vec expects 16kHz)
     if sample_rate != 16000:
