@@ -8,6 +8,7 @@ from transformers import BlipProcessor, BlipForConditionalGeneration, Wav2Vec2Fo
 import torch
 from PIL import Image
 import json
+import torchaudio
 
 # Hugging Face BLIP-2 Setup
 hf_token = "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"
