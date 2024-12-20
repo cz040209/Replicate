@@ -12,12 +12,11 @@ import torchaudio
 
 # Hugging Face BLIP-2 Setup
 hf_token = "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"
-blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
-blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
+# Pipeline for BLIP (Image Captioning)
+blip_pipeline = pipeline("image-captioning", model="Salesforce/blip-image-captioning-large", token=hf_token)
 
-# Hugging Face Wav2Vec 2.0 Setup for Audio-to-Text
-wav2vec_processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
-wav2vec_model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
+# Pipeline for Wav2Vec 2.0 (Speech-to-Text)
+asr_pipeline = pipeline("automatic-speech-recognition", model="facebook/wav2vec2-large-960h-lv60-self")
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -256,32 +255,34 @@ elif input_method == "Enter Text Manually":
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
 
-elif input_method == "Upload Audio":
+# Handle different input methods
+if input_method == "Upload Audio":
     uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
 
     if uploaded_audio:
         st.write("Audio file uploaded. Processing audio...")
 
-        # Transcribe using Wav2Vec 2.0
-        transcript = transcribe_audio(uploaded_audio)
+        # Transcribe using Wav2Vec 2.0 pipeline
+        transcript = asr_pipeline(uploaded_audio)
         st.write("Transcription:")
-        st.write(transcript)
+        st.write(transcript['text'])
 
-if input_method == "Upload Image":
+elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
-        st.write("Image uploaded. Extracting text using BLIP-2...")
+        st.write("Image uploaded. Extracting text using BLIP...")
         try:
-            # Extract text using BLIP-2
-            image_text = extract_text_from_image(uploaded_image)
+            # Extract text using BLIP pipeline
+            image = Image.open(uploaded_image)
+            image_text = blip_pipeline(image)
             st.success("Text extracted successfully!")
 
             # Display extracted text with adjusted font size
             with st.expander("View Extracted Text"):
-                st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size: 14px;'>{image_text[0]['caption']}</div>", unsafe_allow_html=True)
 
-            content = image_text
+            content = image_text[0]['caption']
         except Exception as e:
             st.error(f"Error extracting text from image: {e}")
 
