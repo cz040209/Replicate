@@ -134,8 +134,9 @@ def translate_text(text, target_language, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
-# Function to Convert Audio to Text Using Wav2Vec 2.0
 def transcribe_audio(audio_file):
+    torchaudio.set_audio_backend("sox_io")  # Set backend to sox_io
+
     # Read the file as a byte stream
     audio_bytes = audio_file.read()
     
