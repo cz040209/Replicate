@@ -8,6 +8,5 @@ pytz
 python-dotenv
 openai
 pydub
-transformers==4.17.0
 torch
 torchaudio
