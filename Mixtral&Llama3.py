@@ -10,7 +10,6 @@ from PIL import Image
 import json
 from io import BytesIO
 import openai
-import pytz
 
 # Accessing the Sambanova API key from Streamlit secrets
 sambanova_api_key = st.secrets["general"]["SAMBANOVA_API_KEY"]
@@ -56,7 +55,6 @@ client = SambanovaClient(api_key=sambanova_api_key, base_url=base_url)
 hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
 blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
 blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
-
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -412,18 +410,3 @@ if st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
-
-# Set the timezone to Malaysia
-malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
-
-# Get the current time in Malaysia timezone
-current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
-
-# Use the current_time in your interaction dictionary
-interaction = {
-    "time": current_time,
-    "input_method": input_method,
-    "question": question,
-    "response": "",
-    "content_preview": content[:100] if content else "No content available"
-}
