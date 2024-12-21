@@ -463,17 +463,17 @@ if content:
         if content:
             # Send the question and content to the API for response
             url = f"{base_url}/chat/completions"
-            data = {
-                "model": selected_model_id,
-                "messages": [
-                    {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                    {"role": "system", "content": content},
-                    {"role": "user", "content": question}
-                ],
-                "temperature": 0.7,
-                "max_tokens": 200,
-                "top_p": 0.9
-            }
+        data = {
+            "model": selected_model_id,
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                {"role": "system", "content": content},  # Ensure content is correctly passed
+                {"role": "user", "content": question}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 200,
+            "top_p": 0.9
+        }
 
             try:
                 response = requests.post(url, headers=headers, json=data)
