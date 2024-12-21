@@ -1,6 +1,3 @@
-import sys
-st.write(sys.version)
-
 
 import requests
 import streamlit as st
@@ -12,6 +9,11 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 import torch
 from PIL import Image
 import json
+
+import sys
+st.write(sys.version)
+
+
 
 # Hugging Face BLIP-2 Setup
 hf_token = "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"
