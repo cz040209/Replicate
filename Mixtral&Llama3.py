@@ -372,83 +372,30 @@ if content:
     tts.save("translated_response.mp3")
     st.audio("translated_response.mp3", format="audio/mp3")
 
-# Step 2: Allow users to ask questions interactively
+# Step 1: Only ask question when user input is provided (no prompt twice)
 if content and selected_model_id:
-    question = st.text_input("Ask a question about the extracted content:")
-    
-    if question:
-        # Set timezone to Malaysia for timestamp
-        malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
-        current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Interaction data structure for tracking conversation
-        interaction = {
-            "time": current_time,
-            "input_method": input_method,
-            "question": question,
-            "response": "",
-            "content_preview": content[:100] if content else "No content available"
-        }
-        
-        # Add user question to history
-        st.session_state.history.append(interaction)
+    # If the user is ready to ask a question, show a text input box
+    if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
+        question = st.text_input("Ask a question about the content:")
 
-        # Send the question and content to the selected model API for response
-        url = f"{base_url}/chat/completions"
-        data = {
-            "model": selected_model_id,
-            "messages": [
-                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                {"role": "system", "content": content},
-                {"role": "user", "content": question}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 200,
-            "top_p": 0.9
-        }
+        if question:
+            # Set the timezone to Malaysia for the timestamp
+            malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+            current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
 
-        try:
-            response = requests.post(url, headers=headers, json=data)
-            if response.status_code == 200:
-                result = response.json()
-                answer = result['choices'][0]['message']['content']
+            # Prepare the interaction data for history tracking
+            interaction = {
+                "time": current_time,
+                "input_method": input_method,
+                "question": question,
+                "response": "",
+                "content_preview": content[:100] if content else "No content available"
+            }
 
-                # Store bot's answer in the interaction history
-                interaction["response"] = answer
-                st.session_state.history[-1] = interaction
+            # Add the user question to the history
+            st.session_state.history.append(interaction)
 
-                # Display bot's response
-                st.write("Answer:", answer)
-
-            else:
-                st.write(f"Error {response.status_code}: {response.text}")
-        except requests.exceptions.RequestException as e:
-            st.write(f"An error occurred: {e}")
-
-# Step 2: User Input for Questions
-if content:
-    question = st.text_input("Ask a question about the content:")
-
-    if question:
-        # Set the timezone to Malaysia
-        malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
-        
-        # Get the current time in Malaysia timezone
-        current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Use the current_time in your interaction dictionary
-        interaction = {
-            "time": current_time,
-            "input_method": input_method,
-            "question": question,
-            "response": "",
-            "content_preview": content[:100] if content else "No content available"
-        }
-        # Add user question to history
-        st.session_state.history.append(interaction)
-
-        if content:
-            # Send the question and content to the API for response
+            # Send the question along with the content to the selected model API for the response
             url = f"{base_url}/chat/completions"
             data = {
                 "model": selected_model_id,
@@ -468,17 +415,20 @@ if content:
                     result = response.json()
                     answer = result['choices'][0]['message']['content']
 
-                    # Store bot's answer in the interaction history
-                    interaction["response"] = answer
-                    st.session_state.history[-1] = interaction
+                    # Store the model's answer in the interaction history
+                    st.session_state.history[-1]["response"] = answer
 
-                    # Display bot's response
-                    st.write("Answer:", answer)
+                    # Display the model's response
+                    st.write(f"Answer: {answer}")
 
                 else:
                     st.write(f"Error {response.status_code}: {response.text}")
             except requests.exceptions.RequestException as e:
                 st.write(f"An error occurred: {e}")
+        
+    else:
+        # If there's already a response from the model, ask for follow-up questions
+        st.write("You can ask more questions or clarify any points.")
 
 # Step 3: Display interaction history in the sidebar
 if st.session_state.history:
