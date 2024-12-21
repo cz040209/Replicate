@@ -221,18 +221,25 @@ def extract_text_from_image(image_file):
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
-# Model selection - Available only for PDF and manual text input
+# Summarize Text after file or manual input
 if input_method in ["Upload PDF", "Enter Text Manually"]:
-    selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
-    
-    # Ensure that the user selects a model (no default)
-    if selected_model_name:
-        selected_model_id = available_models[selected_model_name]
-    else:
-        st.error("Please select a model to proceed.")
-        selected_model_id = None
-else:
-    selected_model_id = None
+    if st.button("Summarize Text"):
+        st.write("Summarizing the text...")
+        
+        # Get the summary of the content
+        summary = summarize_text(content, selected_model_id)
+        st.write("Summary:")
+        st.write(summary)
+
+        # Translate only the summary into the selected language
+        translated_summary = translate_text(summary, selected_language, selected_model_id)
+        st.write(f"Translated Summary in {selected_language}:")
+        st.write(translated_summary)
+
+        # Convert the translated summary to audio (for accessibility)
+        tts = gTTS(text=translated_summary, lang='en')  # Use English summary for audio
+        tts.save("translated_response.mp3")
+        st.audio("translated_response.mp3", format="audio/mp3")
 
 # Sidebar for interaction history
 if "history" not in st.session_state:
