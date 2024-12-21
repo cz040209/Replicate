@@ -1,6 +1,6 @@
 import requests
 import streamlit as st
-import PyPDF2
+import pdfplumber  # Replaced PyPDF2 with pdfplumber
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
@@ -73,12 +73,12 @@ available_models = {
     "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile"
 }
 
-# Step 1: Function to Extract Text from PDF
+# Step 1: Function to Extract Text from PDF using pdfplumber
 def extract_text_from_pdf(pdf_file):
-    pdf_reader = PyPDF2.PdfReader(pdf_file)
     extracted_text = ""
-    for page in pdf_reader.pages:
-        extracted_text += page.extract_text()
+    with pdfplumber.open(pdf_file) as pdf:
+        for page in pdf.pages:
+            extracted_text += page.extract_text()
     return extracted_text
 
 # Function to Summarize the Text
@@ -305,4 +305,3 @@ if st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
-
