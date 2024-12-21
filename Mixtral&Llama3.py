@@ -8,6 +8,7 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 import torch
 from PIL import Image
 import json
+from io import BytesIO
 
 # API keys
 sambanova_api_key = st.secrets["general"]["SAMBANOVA_API_KEY"]
