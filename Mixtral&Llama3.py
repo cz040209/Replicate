@@ -1,3 +1,7 @@
+import sys
+st.write(sys.version)
+
+
 import requests
 import streamlit as st
 import pdfplumber  # Replaced PyPDF2 with pdfplumber
