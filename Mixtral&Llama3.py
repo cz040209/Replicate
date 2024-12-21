@@ -377,7 +377,7 @@ if content:
 if content and selected_model_id:
     # If the user is ready to ask a question, show a text input box
     if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
-        question = st.text_input("Ask a question about the content:", key="question_input")
+        question = st.text_input("Ask a question about the content:")
 
         if question:
             # Set the timezone to Malaysia for the timestamp
@@ -442,38 +442,4 @@ if st.session_state.history:
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
 
-# Function to measure the time and output quality of each model
-def measure_model_performance(model_id, text_to_process, question=None, action="summarize"):
-    start_time = time.time()
-    
-    # Display a spinner while the API call is being made
-    with st.spinner("Processing... This might take a moment."):
-        if action == "summarize":
-            output = summarize_text(text_to_process, model_id)
-        elif action == "translate":
-            output = translate_text(text_to_process, selected_language, model_id)
-        elif action == "qa":
-            output = get_qa_response(model_id, text_to_process, question)
-        
-        elapsed_time = time.time() - start_time
-    
-    # Show the execution time immediately after the action is completed
-    st.write(f"Time taken for {action}: {elapsed_time:.2f} seconds")
-    
-    return elapsed_time, output
 
-# Example usage in the interaction flow
-if content and selected_model_id:
-    if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
-        # Give the text input a unique key
-        question = st.text_input("Ask a question about the content:", key="question_input")
-
-        if question:
-            # Track time for the model's Q&A response
-            elapsed_time, answer = measure_model_performance(
-                selected_model_id, content, question, action="qa"
-            )
-            
-            # Display the answer
-            st.write(f"Answer: {answer}")
-            st.write(f"Execution Time: {elapsed_time:.2f} seconds")
