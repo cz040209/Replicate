@@ -16,7 +16,7 @@ import pytz
 sambanova_api_key = st.secrets["general"]["SAMBANOVA_API_KEY"]
 
 class SambanovaClient:
-    def _init_(self, api_key, base_url):
+    def __init__(self, api_key, base_url):
         # Initialize with API key and base URL
         self.api_key = api_key
         self.base_url = base_url
@@ -497,9 +497,9 @@ if content:
 if st.session_state.history:
     st.sidebar.header("Interaction History")
     for idx, interaction in enumerate(st.session_state.history):
-        st.sidebar.markdown(f"{interaction['time']}")
-        st.sidebar.markdown(f"*Input Method*: {interaction['input_method']}")
-        st.sidebar.markdown(f"*Question*: {interaction['question']}")
-        st.sidebar.markdown(f"*Response*: {interaction['response']}")
-        st.sidebar.markdown(f"*Content Preview*: {interaction['content_preview']}")
+        st.sidebar.markdown(f"**{interaction['time']}**")
+        st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")
+        st.sidebar.markdown(f"**Question**: {interaction['question']}")
+        st.sidebar.markdown(f"**Response**: {interaction['response']}")
+        st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
