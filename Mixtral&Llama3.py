@@ -136,7 +136,7 @@ def summarize_text(text, model_id):
             {"role": "user", "content": text}
         ],
         "temperature": 0.7,
-        "max_tokens": 300,
+        "max_tokens": 500,
         "top_p": 0.9
     }
 
@@ -160,7 +160,7 @@ def translate_text(text, target_language, model_id):
             {"role": "user", "content": text}
         ],
         "temperature": 0.7,
-        "max_tokens": 300,
+        "max_tokens": 500,
         "top_p": 0.9
     }
 
@@ -405,7 +405,7 @@ if content and selected_model_id:
                     {"role": "user", "content": question}
                 ],
                 "temperature": 0.7,
-                "max_tokens": 200,
+                "max_tokens": 500,
                 "top_p": 0.9
             }
 
