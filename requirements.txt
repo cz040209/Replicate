@@ -12,4 +12,5 @@ gTTS
 numpy
 openai
 torch
-
+datasets
+torchvision
