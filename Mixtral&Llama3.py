@@ -15,31 +15,42 @@ import pytz
 # Accessing the Sambanova API key from Streamlit secrets
 sambanova_api_key = st.secrets["general"]["SAMBANOVA_API_KEY"]
 
-# Define the Sambanova API base URL
-base_url = "https://api.sambanova.ai/v1"  # Correct Sambanova endpoint
+class SambanovaClient:
+    def __init__(self, api_key, base_url):
+        # Initialize with API key and base URL
+        self.api_key = api_key
+        self.base_url = base_url
 
-# Function to interact with Sambanova API (for chat/completion)
-def sambanova_chat(model_id, messages, temperature=0.7, max_tokens=500):
-    url = f"{base_url}/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {sambanova_api_key}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "model": model_id,
-        "messages": messages,
-        "temperature": temperature,
-        "max_tokens": max_tokens
-    }
-    
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        
-        result = response.json()
-        return result['choices'][0]['message']['content']
-    except requests.exceptions.RequestException as e:
-        return f"Error while calling Sambanova API: {str(e)}"
+    def chat(self, model, messages, temperature=0.7, top_p=1.0, max_tokens=500):
+        # Prepare headers and data for the API request
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+
+        # Request payload
+        data = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "top_p": top_p
+        }
+
+        try:
+            # Send POST request to the Sambanova API
+            response = requests.post(f"{self.base_url}/chat/completions", headers=headers, json=data)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            
+            result = response.json()
+            return result['choices'][0]['message']['content']  # Return the response content
+        except requests.exceptions.RequestException as e:
+            # Catch errors and return a useful message
+            raise Exception(f"Error while calling Sambanova API: {str(e)}")
+
+# Initialize SambanovaClient with the API key fetched from secrets
+base_url = "https://api.sambanova.ai/v1"  # Correct Sambanova URL
+client = SambanovaClient(api_key=sambanova_api_key, base_url=base_url)
 
 # Hugging Face BLIP-2 Setup
 hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
@@ -125,7 +136,7 @@ def summarize_text(text, model_id):
             {"role": "user", "content": text}
         ],
         "temperature": 0.7,
-        "max_tokens": 500,
+        "max_tokens": 300,
         "top_p": 0.9
     }
 
@@ -149,7 +160,7 @@ def translate_text(text, target_language, model_id):
             {"role": "user", "content": text}
         ],
         "temperature": 0.7,
-        "max_tokens": 500,
+        "max_tokens": 300,
         "top_p": 0.9
     }
 
@@ -221,25 +232,18 @@ def extract_text_from_image(image_file):
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
-# Summarize Text after file or manual input
+# Model selection - Available only for PDF and manual text input
 if input_method in ["Upload PDF", "Enter Text Manually"]:
-    if st.button("Summarize Text"):
-        st.write("Summarizing the text...")
-        
-        # Get the summary of the content
-        summary = summarize_text(content, selected_model_id)
-        st.write("Summary:")
-        st.write(summary)
-
-        # Translate only the summary into the selected language
-        translated_summary = translate_text(summary, selected_language, selected_model_id)
-        st.write(f"Translated Summary in {selected_language}:")
-        st.write(translated_summary)
-
-        # Convert the translated summary to audio (for accessibility)
-        tts = gTTS(text=translated_summary, lang='en')  # Use English summary for audio
-        tts.save("translated_response.mp3")
-        st.audio("translated_response.mp3", format="audio/mp3")
+    selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
+    
+    # Ensure that the user selects a model (no default)
+    if selected_model_name:
+        selected_model_id = available_models[selected_model_name]
+    else:
+        st.error("Please select a model to proceed.")
+        selected_model_id = None
+else:
+    selected_model_id = None
 
 # Sidebar for interaction history
 if "history" not in st.session_state:
@@ -282,7 +286,7 @@ if input_method == "Upload PDF":
             st.write("Summary:")
             st.write(summary)
 
-            # **Only translate the summary**
+            # Translate the summary to the selected language
             translated_summary = translate_text(summary, selected_language, selected_model_id)
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
@@ -305,7 +309,7 @@ elif input_method == "Enter Text Manually":
             st.write("Summary:")
             st.write(summary)
 
-            # **Only translate the summary**
+            # Translate the summary to the selected language
             translated_summary = translate_text(summary, selected_language, selected_model_id)
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
@@ -314,7 +318,7 @@ elif input_method == "Enter Text Manually":
             tts = gTTS(text=summary, lang='en')  # Use English summary for audio
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
-            
+
 # Step 1: After uploading image or audio, user selects model for translation and Q&A
 if input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
@@ -401,7 +405,7 @@ if content and selected_model_id:
                     {"role": "user", "content": question}
                 ],
                 "temperature": 0.7,
-                "max_tokens": 500,
+                "max_tokens": 200,
                 "top_p": 0.9
             }
 
