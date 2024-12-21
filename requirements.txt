@@ -12,5 +12,5 @@ torch
 torchaudio
 gTTS
 numpy
-io
+
 
