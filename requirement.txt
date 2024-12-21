@@ -1,7 +1,6 @@
 requests==2.32.3
 streamlit==1.41.1
-pdfplumber==0.7.7
-gtts
+pdfplumber==0.11.4
 pytesseract
 Pillow
 pytz
