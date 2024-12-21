@@ -9,6 +9,7 @@ import torch
 from PIL import Image
 import json
 from io import BytesIO
+import openai
 
 # API keys
 sambanova_api_key = st.secrets["general"]["SAMBANOVA_API_KEY"]
