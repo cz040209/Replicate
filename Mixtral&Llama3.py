@@ -153,16 +153,16 @@ def summarize_text(text, model_id):
 # Function to Translate Text Using the Selected Model
 def translate_text(text, target_language, model_id):
     url = f"{base_url}/chat/completions"
-    data = {
-        "model": model_id,
-        "messages": [
-            {"role": "system", "content": f"Translate the following text into {target_language}."},
-            {"role": "user", "content": text}
-        ],
-        "temperature": 0.7,
-        "max_tokens": 300,
-        "top_p": 0.9
-    }
+        data = {
+            "model": model_id,
+            "messages": [
+                {"role": "system", "content": f"Translate the following text into {target_language}."},
+                {"role": "user", "content": text}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 300,
+            "top_p": 0.9
+        }
 
     try:
         response = requests.post(url, headers=headers, json=data)
