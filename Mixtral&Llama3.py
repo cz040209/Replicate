@@ -390,7 +390,8 @@ if content and selected_model_id:
                 "input_method": input_method,
                 "question": question,
                 "response": "",
-                "content_preview": content[:100] if content else "No content available"
+                "content_preview": content[:100] if content else "No content available",
+                "start_time": time.time()  # Store the start time when the question is asked
             }
 
             # Add the user question to the history
@@ -419,8 +420,15 @@ if content and selected_model_id:
                     # Store the model's answer in the interaction history
                     st.session_state.history[-1]["response"] = answer
 
+                    # Calculate processing time by subtracting start_time from current time
+                    end_time = time.time()
+                    processing_time = end_time - st.session_state.history[-1]["start_time"]
+
                     # Display the model's response
                     st.write(f"Answer: {answer}")
+
+                    # Display the processing time below the model's answer
+                    st.write(f"Processing Time: {processing_time:.2f} seconds")
 
                 else:
                     st.write(f"Error {response.status_code}: {response.text}")
