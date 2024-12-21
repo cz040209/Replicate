@@ -10,5 +10,5 @@ pydub
 transformers
 gTTS
 numpy
-openai==0.27.0 
+openai
 torch
