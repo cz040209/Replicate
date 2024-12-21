@@ -10,7 +10,7 @@ from PIL import Image
 import json
 
 # Hugging Face BLIP-2 Setup
-hf_token = "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"
+hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
 blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
 blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
 
