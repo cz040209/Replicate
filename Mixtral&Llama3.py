@@ -356,9 +356,15 @@ if content:
     question = st.text_input("Ask a question about the content:")
 
     if question:
-        # Create interaction dictionary with timestamp
+        # Set the timezone to Malaysia
+        malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+        
+        # Get the current time in Malaysia timezone
+        current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Use the current_time in your interaction dictionary
         interaction = {
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "time": current_time,
             "input_method": input_method,
             "question": question,
             "response": "",
