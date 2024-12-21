@@ -1,6 +1,12 @@
 
 import requests
 import streamlit as st
+
+
+import sys
+st.write(sys.version)
+
+
 import pdfplumber  # Replaced PyPDF2 with pdfplumber
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
@@ -9,10 +15,6 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 import torch
 from PIL import Image
 import json
-
-import sys
-st.write(sys.version)
-
 
 
 # Hugging Face BLIP-2 Setup
