@@ -12,7 +12,34 @@ from io import BytesIO
 import openai
 import pytz
 
+# Accessing the Sambanova API key from Streamlit secrets
+sambanova_api_key = st.secrets["general"]["SAMBANOVA_API_KEY"]
 
+# Define the Sambanova API base URL
+base_url = "https://api.sambanova.ai/v1"  # Correct Sambanova endpoint
+
+# Function to interact with Sambanova API (for chat/completion)
+def sambanova_chat(model_id, messages, temperature=0.7, max_tokens=500):
+    url = f"{base_url}/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {sambanova_api_key}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": model_id,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        
+        result = response.json()
+        return result['choices'][0]['message']['content']
+    except requests.exceptions.RequestException as e:
+        return f"Error while calling Sambanova API: {str(e)}"
 
 # Hugging Face BLIP-2 Setup
 hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
