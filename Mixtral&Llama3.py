@@ -319,24 +319,10 @@ elif input_method == "Enter Text Manually":
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
 
-elif input_method == "Upload Audio":
-    uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
-
-    if uploaded_audio:
-        st.write("Audio file uploaded. Processing audio...")
-
-        # Transcribe using Groq's Whisper API
-        transcript = transcribe_audio(uploaded_audio)
-        if transcript:
-            st.write("Transcription:")
-            st.write(transcript)
-        else:
-            st.error("Failed to transcribe the audio.")
-
-
+# Step 1: After uploading image or audio, user selects model for translation and Q&A
 if input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
-
+    
     if uploaded_image:
         st.write("Image uploaded. Extracting text using BLIP-2...")
         try:
@@ -351,6 +337,93 @@ if input_method == "Upload Image":
             content = image_text
         except Exception as e:
             st.error(f"Error extracting text from image: {e}")
+
+        # Select a model for translation and Q&A
+        selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
+        selected_model_id = available_models.get(selected_model_name)
+
+elif input_method == "Upload Audio":
+    uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
+
+    if uploaded_audio:
+        st.write("Audio file uploaded. Processing audio...")
+        
+        # Transcribe using Groq's Whisper API
+        transcript = transcribe_audio(uploaded_audio)
+        if transcript:
+            st.write("Transcription:")
+            st.write(transcript)
+            content = transcript  # Set the transcription as content
+        else:
+            st.error("Failed to transcribe the audio.")
+
+        # Select a model for translation and Q&A
+        selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="audio_model_selection")
+        selected_model_id = available_models.get(selected_model_name)
+
+# Translation of the extracted text to selected language
+if content:
+    translated_content = translate_text(content, selected_language, selected_model_id)
+    st.write(f"Translated content in {selected_language}:")
+    st.write(translated_content)
+
+    # Convert the translated content to speech (if needed)
+    tts = gTTS(text=translated_content, lang='en')  # For demonstration in English
+    tts.save("translated_response.mp3")
+    st.audio("translated_response.mp3", format="audio/mp3")
+
+# Step 2: Allow users to ask questions interactively
+if content and selected_model_id:
+    question = st.text_input("Ask a question about the extracted content:")
+    
+    if question:
+        # Set timezone to Malaysia for timestamp
+        malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+        current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Interaction data structure for tracking conversation
+        interaction = {
+            "time": current_time,
+            "input_method": input_method,
+            "question": question,
+            "response": "",
+            "content_preview": content[:100] if content else "No content available"
+        }
+        
+        # Add user question to history
+        st.session_state.history.append(interaction)
+
+        # Send the question and content to the selected model API for response
+        url = f"{base_url}/chat/completions"
+        data = {
+            "model": selected_model_id,
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                {"role": "system", "content": content},
+                {"role": "user", "content": question}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 200,
+            "top_p": 0.9
+        }
+
+        try:
+            response = requests.post(url, headers=headers, json=data)
+            if response.status_code == 200:
+                result = response.json()
+                answer = result['choices'][0]['message']['content']
+
+                # Store bot's answer in the interaction history
+                interaction["response"] = answer
+                st.session_state.history[-1] = interaction
+
+                # Display bot's response
+                st.write("Answer:", answer)
+
+            else:
+                st.write(f"Error {response.status_code}: {response.text}")
+        except requests.exceptions.RequestException as e:
+            st.write(f"An error occurred: {e}")
 
 # Step 2: User Input for Questions
 if content:
@@ -407,7 +480,7 @@ if content:
             except requests.exceptions.RequestException as e:
                 st.write(f"An error occurred: {e}")
 
-# Display interaction history in the sidebar
+# Step 3: Display interaction history in the sidebar
 if st.session_state.history:
     st.sidebar.header("Interaction History")
     for idx, interaction in enumerate(st.session_state.history):
