@@ -446,22 +446,33 @@ if st.session_state.history:
 def measure_model_performance(model_id, text_to_process, question=None, action="summarize"):
     start_time = time.time()
     
-    # Generate the output based on action (summarize, translate, Q&A)
-    if action == "summarize":
-        output = summarize_text(text_to_process, model_id)
-    elif action == "translate":
-        output = translate_text(text_to_process, selected_language, model_id)
-    elif action == "qa":
-        output = get_qa_response(model_id, text_to_process, question)
+    # Display a spinner while the API call is being made
+    with st.spinner("Processing... This might take a moment."):
+        if action == "summarize":
+            output = summarize_text(text_to_process, model_id)
+        elif action == "translate":
+            output = translate_text(text_to_process, selected_language, model_id)
+        elif action == "qa":
+            output = get_qa_response(model_id, text_to_process, question)
+        
+        elapsed_time = time.time() - start_time
     
-    # Calculate the time taken to generate the response
-    elapsed_time = time.time() - start_time
+    # Show the execution time immediately after the action is completed
+    st.write(f"Time taken for {action}: {elapsed_time:.2f} seconds")
     
-    # Store the model performance data
-    performance_data = {
-        "model_id": model_id,
-        "execution_time": elapsed_time,
-        "output": output
-    }
+    return elapsed_time, output
+
+# Example usage in the interaction flow
+if content and selected_model_id:
+    # Ask the question (if there is content and a selected model)
+    question = st.text_input("Ask a question about the content:")
     
-    return performance_data
+    if question:
+        # Track time for the model's Q&A response
+        elapsed_time, answer = measure_model_performance(
+            selected_model_id, content, question, action="qa"
+        )
+        
+        # Display the answer
+        st.write(f"Answer: {answer}")
+        st.write(f"Execution Time: {elapsed_time:.2f} seconds")
