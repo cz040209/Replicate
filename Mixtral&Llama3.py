@@ -1,19 +1,22 @@
 import requests
 import streamlit as st
-import pdfplumber  # Replaced PyPDF2 with pdfplumber
+import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
-from transformers import BlipProcessor, BlipForConditionalGeneration
+from transformers import BlipProcessor, BlipForConditionalGeneration, Wav2Vec2ForCTC, Wav2Vec2Processor
 import torch
 from PIL import Image
 import json
-
 
 # Hugging Face BLIP-2 Setup
 hf_token = "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"
 blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
 blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", use_auth_token=hf_token)
+
+# Hugging Face Wav2Vec 2.0 Setup for Audio-to-Text
+wav2vec_processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
+wav2vec_model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -74,12 +77,12 @@ available_models = {
     "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile"
 }
 
-# Step 1: Function to Extract Text from PDF using pdfplumber
+# Step 1: Function to Extract Text from PDF
 def extract_text_from_pdf(pdf_file):
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
     extracted_text = ""
-    with pdfplumber.open(pdf_file) as pdf:
-        for page in pdf.pages:
-            extracted_text += page.extract_text()
+    for page in pdf_reader.pages:
+        extracted_text += page.extract_text()
     return extracted_text
 
 # Function to Summarize the Text
@@ -130,6 +133,29 @@ def translate_text(text, target_language, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
+# Function to Convert Audio to Text Using Wav2Vec 2.0
+def transcribe_audio(audio_file):
+    # Load the audio file with torchaudio
+    waveform, sample_rate = torchaudio.load(audio_file)
+
+    # Resample if necessary (Wav2Vec expects 16kHz)
+    if sample_rate != 16000:
+        waveform = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)(waveform)
+        sample_rate = 16000
+
+    # Process the audio with the Wav2Vec2 processor
+    inputs = wav2vec_processor(waveform, return_tensors="pt", sampling_rate=sample_rate)
+
+    # Forward pass through the model
+    with torch.no_grad():
+        logits = wav2vec_model(input_values=inputs.input_values).logits
+
+    # Decode the prediction to text
+    predicted_ids = torch.argmax(logits, dim=-1)
+    transcription = wav2vec_processor.batch_decode(predicted_ids)
+
+    return transcription[0]
+
 # Step 2: Function to Extract Text from Image using BLIP-2
 def extract_text_from_image(image_file):
     # Open image from uploaded file
@@ -145,7 +171,7 @@ def extract_text_from_image(image_file):
     return caption
 
 # Input Method Selection
-input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Image"])
+input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
 
 # Model selection - Available only for PDF and manual text input
 if input_method in ["Upload PDF", "Enter Text Manually"]:
@@ -229,7 +255,18 @@ elif input_method == "Enter Text Manually":
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
 
-elif input_method == "Upload Image":
+elif input_method == "Upload Audio":
+    uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
+
+    if uploaded_audio:
+        st.write("Audio file uploaded. Processing audio...")
+
+        # Transcribe using Wav2Vec 2.0
+        transcript = transcribe_audio(uploaded_audio)
+        st.write("Transcription:")
+        st.write(transcript)
+
+if input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
     if uploaded_image:
