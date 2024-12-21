@@ -377,7 +377,7 @@ if content:
 if content and selected_model_id:
     # If the user is ready to ask a question, show a text input box
     if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
-        question = st.text_input("Ask a question about the content:")
+        question = st.text_input("Ask a question about the content:", key="question_input")
 
         if question:
             # Set the timezone to Malaysia for the timestamp
@@ -464,15 +464,16 @@ def measure_model_performance(model_id, text_to_process, question=None, action="
 
 # Example usage in the interaction flow
 if content and selected_model_id:
-    # Ask the question (if there is content and a selected model)
-    question = st.text_input("Ask a question about the content:")
-    
-    if question:
-        # Track time for the model's Q&A response
-        elapsed_time, answer = measure_model_performance(
-            selected_model_id, content, question, action="qa"
-        )
-        
-        # Display the answer
-        st.write(f"Answer: {answer}")
-        st.write(f"Execution Time: {elapsed_time:.2f} seconds")
+    if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
+        # Give the text input a unique key
+        question = st.text_input("Ask a question about the content:", key="question_input")
+
+        if question:
+            # Track time for the model's Q&A response
+            elapsed_time, answer = measure_model_performance(
+                selected_model_id, content, question, action="qa"
+            )
+            
+            # Display the answer
+            st.write(f"Answer: {answer}")
+            st.write(f"Execution Time: {elapsed_time:.2f} seconds")
