@@ -11,5 +11,5 @@ transformers
 gTTS
 numpy
 openai
-
+torch
 
