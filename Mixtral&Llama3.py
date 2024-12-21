@@ -1,12 +1,5 @@
-
 import requests
 import streamlit as st
-
-
-import sys
-st.write(sys.version)
-
-
 import pdfplumber  # Replaced PyPDF2 with pdfplumber
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
