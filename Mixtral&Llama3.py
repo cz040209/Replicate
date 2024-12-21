@@ -135,7 +135,7 @@ def summarize_text(text, model_id):
             {"role": "user", "content": text}
         ],
         "temperature": 0.7,
-        "max_tokens": 500,
+        "max_tokens": 5000,
         "top_p": 0.9
     }
 
