@@ -254,9 +254,9 @@ content = ""
 
 # Language selection for translation
 languages = [
-    "English", "Spanish", "French", "Italian", "Portuguese", "Romanian", 
+    "English", "Chinese", "Spanish", "French", "Italian", "Portuguese", "Romanian", 
     "German", "Dutch", "Swedish", "Danish", "Norwegian", "Russian", 
-    "Polish", "Czech", "Ukrainian", "Serbian", "Chinese", "Japanese", 
+    "Polish", "Czech", "Ukrainian", "Serbian", "Japanese", 
     "Korean", "Hindi", "Bengali", "Arabic", "Hebrew", "Persian", 
     "Punjabi", "Tamil", "Telugu", "Swahili", "Amharic"
 ]
