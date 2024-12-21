@@ -133,25 +133,46 @@ def translate_text(text, target_language, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred during translation: {e}"
 
-# Function to Convert Audio to Text Using Wav2Vec 2.0
-def transcribe_audio(audio_file):
-    # Load the audio file into a format Wav2Vec can process
-    audio_data = audio_file.read()
-    # Convert to waveform
-    audio_tensor = torch.tensor(audio_data)
+# Updated function to transcribe audio using the Groq Whisper API
+def transcribe_audio(file):
+    whisper_api_key = st.secrets["whisper"]["WHISPER_API_KEY"]  # Access Whisper API key
+    url = "https://api.groq.com/openai/v1/audio/transcriptions"  # Groq transcription endpoint
 
-    # Process the audio with the Wav2Vec2 processor
-    inputs = wav2vec_processor(audio_tensor, return_tensors="pt", sampling_rate=16000)
+    # Check file type
+    valid_types = ['flac', 'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'ogg', 'opus', 'wav', 'webm']
+    extension = file.name.split('.')[-1].lower()
+    if extension not in valid_types:
+        st.error(f"Invalid file type: {extension}. Supported types: {', '.join(valid_types)}")
+        return None
 
-    # Forward pass through the model
-    with torch.no_grad():
-        logits = wav2vec_model(input_values=inputs.input_values).logits
+    # Prepare file buffer with proper extension in the .name attribute
+    audio_data = file.read()  # Use file.read() to handle the uploaded file correctly
+    buffer = BytesIO(audio_data)
+    buffer.name = f"file.{extension}"  # Assigning a valid extension based on the uploaded file
 
-    # Decode the prediction to text
-    predicted_ids = torch.argmax(logits, dim=-1)
-    transcription = wav2vec_processor.batch_decode(predicted_ids)
+    # Prepare the request payload
+    headers = {"Authorization": f"Bearer {whisper_api_key}"}
+    data = {"model": "whisper-large-v3-turbo", "language": "en"}
 
-    return transcription[0]
+    try:
+        # Send the audio file for transcription
+        response = requests.post(
+            url,
+            headers=headers,
+            files={"file": buffer},
+            data=data
+        )
+
+        # Handle response
+        if response.status_code == 200:
+            transcription = response.json()
+            return transcription.get("text", "No transcription text found.")
+        else:
+            st.error(f"Error: {response.status_code} - {response.text}")
+            return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error during transcription: {str(e)}")
+        return None
 
 # Step 2: Function to Extract Text from Image using BLIP-2
 def extract_text_from_image(image_file):
@@ -258,10 +279,14 @@ elif input_method == "Upload Audio":
     if uploaded_audio:
         st.write("Audio file uploaded. Processing audio...")
 
-        # Transcribe using Wav2Vec 2.0
+        # Transcribe using Groq's Whisper API
         transcript = transcribe_audio(uploaded_audio)
-        st.write("Transcription:")
-        st.write(transcript)
+        if transcript:
+            st.write("Transcription:")
+            st.write(transcript)
+        else:
+            st.error("Failed to transcribe the audio.")
+
 
 if input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
