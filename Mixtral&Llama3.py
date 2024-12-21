@@ -253,9 +253,9 @@ content = ""
 
 # Language selection for translation
 languages = [
-    "English", "Spanish", "French", "Italian", "Portuguese", "Romanian", 
+    "English", "Chinese", "Spanish", "French", "Italian", "Portuguese", "Romanian", 
     "German", "Dutch", "Swedish", "Danish", "Norwegian", "Russian", 
-    "Polish", "Czech", "Ukrainian", "Serbian", "Chinese", "Japanese", 
+    "Polish", "Czech", "Ukrainian", "Serbian", "Japanese", 
     "Korean", "Hindi", "Bengali", "Arabic", "Hebrew", "Persian", 
     "Punjabi", "Tamil", "Telugu", "Swahili", "Amharic"
 ]
@@ -318,21 +318,20 @@ elif input_method == "Enter Text Manually":
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
 
-elif input_method == "Upload Audio":
-    uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
+# Model selection for Image and Audio uploads
+if input_method in ["Upload Audio", "Upload Image"]:
+    selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection_image_audio")
+    
+    # Ensure that the user selects a model (no default)
+    if selected_model_name:
+        selected_model_id = available_models[selected_model_name]
+    else:
+        st.error("Please select a model to proceed.")
+        selected_model_id = None
+else:
+    selected_model_id = None
 
-    if uploaded_audio:
-        st.write("Audio file uploaded. Processing audio...")
-
-        # Transcribe using Groq's Whisper API
-        transcript = transcribe_audio(uploaded_audio)
-        if transcript:
-            st.write("Transcription:")
-            st.write(transcript)
-        else:
-            st.error("Failed to transcribe the audio.")
-
-
+# Handle image and audio inputs with selected model
 if input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
@@ -348,8 +347,62 @@ if input_method == "Upload Image":
                 st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
 
             content = image_text
+
+            # Translate and summarize the extracted text based on selected model
+            if selected_model_id:
+                if st.button("Summarize and Translate Text"):
+                    st.write("Summarizing the extracted text...")
+                    summary = summarize_text(image_text, selected_model_id)
+                    st.write("Summary:")
+                    st.write(summary)
+
+                    # Translate the summary to the selected language
+                    translated_summary = translate_text(summary, selected_language, selected_model_id)
+                    st.write(f"Translated Summary in {selected_language}:")
+                    st.write(translated_summary)
+
+                    # Convert summary to audio in English (not translated)
+                    tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+                    tts.save("response.mp3")
+                    st.audio("response.mp3", format="audio/mp3")
+
         except Exception as e:
             st.error(f"Error extracting text from image: {e}")
+
+elif input_method == "Upload Audio":
+    uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
+
+    if uploaded_audio:
+        st.write("Audio file uploaded. Processing audio...")
+
+        # Transcribe using Groq's Whisper API
+        transcript = transcribe_audio(uploaded_audio)
+        if transcript:
+            st.write("Transcription:")
+            st.write(transcript)
+
+            content = transcript
+
+            # Translate and summarize the transcribed text based on selected model
+            if selected_model_id:
+                if st.button("Summarize and Translate Text"):
+                    st.write("Summarizing the transcribed text...")
+                    summary = summarize_text(transcript, selected_model_id)
+                    st.write("Summary:")
+                    st.write(summary)
+
+                    # Translate the summary to the selected language
+                    translated_summary = translate_text(summary, selected_language, selected_model_id)
+                    st.write(f"Translated Summary in {selected_language}:")
+                    st.write(translated_summary)
+
+                    # Convert summary to audio in English (not translated)
+                    tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+                    tts.save("response.mp3")
+                    st.audio("response.mp3", format="audio/mp3")
+        else:
+            st.error("Failed to transcribe the audio.")
+
 
 # Step 2: User Input for Questions
 if content:
