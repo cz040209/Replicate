@@ -194,11 +194,16 @@ input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Ma
 
 # Model selection - Available only for PDF and manual text input
 if input_method in ["Upload PDF", "Enter Text Manually"]:
-    selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()))
-    selected_model_id = available_models[selected_model_name]
+    selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
+    
+    # Ensure that the user selects a model (no default)
+    if selected_model_name:
+        selected_model_id = available_models[selected_model_name]
+    else:
+        st.error("Please select a model to proceed.")
+        selected_model_id = None
 else:
-    # If no model is selected, set a default value or handle accordingly
-    selected_model_id = available_models["Mixtral 8x7b"]  # Set default model ID if no model is selected
+    selected_model_id = None
 
 # Sidebar for interaction history
 if "history" not in st.session_state:
