@@ -275,7 +275,7 @@ if input_method == "Upload PDF":
             st.write("Summary:")
             st.write(summary)
 
-            # Translate the summary to the selected language
+            # **Only translate the summary**
             translated_summary = translate_text(summary, selected_language, selected_model_id)
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
@@ -298,7 +298,7 @@ elif input_method == "Enter Text Manually":
             st.write("Summary:")
             st.write(summary)
 
-            # Translate the summary to the selected language
+            # **Only translate the summary**
             translated_summary = translate_text(summary, selected_language, selected_model_id)
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
@@ -307,7 +307,7 @@ elif input_method == "Enter Text Manually":
             tts = gTTS(text=summary, lang='en')  # Use English summary for audio
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
-
+            
 # Step 1: After uploading image or audio, user selects model for translation and Q&A
 if input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
