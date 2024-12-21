@@ -10,7 +10,6 @@ from PIL import Image
 import json
 from io import BytesIO
 import openai
-import pytz
 
 # Accessing the Sambanova API key from Streamlit secrets
 sambanova_api_key = st.secrets["general"]["SAMBANOVA_API_KEY"]
@@ -136,7 +135,7 @@ def summarize_text(text, model_id):
             {"role": "user", "content": text}
         ],
         "temperature": 0.7,
-        "max_tokens": 5000,
+        "max_tokens": 300,
         "top_p": 0.9
     }
 
@@ -254,9 +253,9 @@ content = ""
 
 # Language selection for translation
 languages = [
-    "English", "Chinese", "Spanish", "French", "Italian", "Portuguese", "Romanian", 
+    "English", "Spanish", "French", "Italian", "Portuguese", "Romanian", 
     "German", "Dutch", "Swedish", "Danish", "Norwegian", "Russian", 
-    "Polish", "Czech", "Ukrainian", "Serbian", "Japanese", 
+    "Polish", "Czech", "Ukrainian", "Serbian", "Chinese", "Japanese", 
     "Korean", "Hindi", "Bengali", "Arabic", "Hebrew", "Persian", 
     "Punjabi", "Tamil", "Telugu", "Swahili", "Amharic"
 ]
@@ -319,20 +318,21 @@ elif input_method == "Enter Text Manually":
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
 
-# Model selection for Image and Audio uploads
-if input_method in ["Upload Audio", "Upload Image"]:
-    selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection_image_audio")
-    
-    # Ensure that the user selects a model (no default)
-    if selected_model_name:
-        selected_model_id = available_models[selected_model_name]
-    else:
-        st.error("Please select a model to proceed.")
-        selected_model_id = None
-else:
-    selected_model_id = None
+elif input_method == "Upload Audio":
+    uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
 
-# Handle image and audio inputs with selected model
+    if uploaded_audio:
+        st.write("Audio file uploaded. Processing audio...")
+
+        # Transcribe using Groq's Whisper API
+        transcript = transcribe_audio(uploaded_audio)
+        if transcript:
+            st.write("Transcription:")
+            st.write(transcript)
+        else:
+            st.error("Failed to transcribe the audio.")
+
+
 if input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
 
@@ -348,95 +348,8 @@ if input_method == "Upload Image":
                 st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
 
             content = image_text
-
-            # Summarize the extracted text
-            if st.button("Summarize and Translate Text"):
-                st.write("Summarizing the extracted text...")
-                summary = summarize_text(image_text, selected_model_id)
-                st.write("Summary:")
-                st.write(summary)
-
-                # Translate the summary to the selected language
-                translated_summary = translate_text(summary, selected_language, selected_model_id)
-                st.write(f"Translated Summary in {selected_language}:")
-                st.write(translated_summary)
-
-                # Convert summary to audio in English (not translated)
-                tts = gTTS(text=summary, lang='en')  # Use English summary for audio
-                tts.save("response.mp3")
-                st.audio("response.mp3", format="audio/mp3")
-
-                # Store the summarized content
-                st.session_state.summarized_content = summary
-
-                # Now allow model selection for image processing
-                st.session_state.image_model_selected = True
-
         except Exception as e:
             st.error(f"Error extracting text from image: {e}")
-
-    # Only display model selection after summarization
-    if 'summarized_content' in st.session_state and st.session_state.summarized_content:
-        selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection_image_audio")
-        
-        # Ensure that the user selects a model (no default)
-        if selected_model_name:
-            selected_model_id = available_models[selected_model_name]
-        else:
-            st.error("Please select a model to proceed.")
-            selected_model_id = None
-
-elif input_method == "Upload Audio":
-    uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
-
-    if uploaded_audio:
-        st.write("Audio file uploaded. Processing audio...")
-
-        # Transcribe using Groq's Whisper API
-        transcript = transcribe_audio(uploaded_audio)
-        if transcript:
-            st.write("Transcription:")
-            st.write(transcript)
-
-            content = transcript
-
-            # Summarize the transcribed text
-            if st.button("Summarize and Translate Text"):
-                st.write("Summarizing the transcribed text...")
-                summary = summarize_text(transcript, selected_model_id)
-                st.write("Summary:")
-                st.write(summary)
-
-                # Translate the summary to the selected language
-                translated_summary = translate_text(summary, selected_language, selected_model_id)
-                st.write(f"Translated Summary in {selected_language}:")
-                st.write(translated_summary)
-
-                # Convert summary to audio in English (not translated)
-                tts = gTTS(text=summary, lang='en')  # Use English summary for audio
-                tts.save("response.mp3")
-                st.audio("response.mp3", format="audio/mp3")
-
-                # Store the summarized content
-                st.session_state.summarized_content = summary
-
-                # Now allow model selection for audio processing
-                st.session_state.audio_model_selected = True
-
-        else:
-            st.error("Failed to transcribe the audio.")
-
-    # Only display model selection after summarization
-    if 'summarized_content' in st.session_state and st.session_state.summarized_content:
-        selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection_audio")
-        
-        # Ensure that the user selects a model (no default)
-        if selected_model_name:
-            selected_model_id = available_models[selected_model_name]
-        else:
-            st.error("Please select a model to proceed.")
-            selected_model_id = None
-
 
 # Step 2: User Input for Questions
 if content:
@@ -444,14 +357,8 @@ if content:
 
     if question:
         # Create interaction dictionary with timestamp
-        # Define Malaysia Time (MYT) timezone
-        malaysia_timezone = pytz.timezone("Asia/Kuala_Lumpur")
-
-        # Get the current time in Malaysia Time (MYT)
-        current_time = datetime.now(malaysia_timezone).strftime("%Y-%m-%d %H:%M:%S")
-        
         interaction = {
-            "time": current_time,
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "input_method": input_method,
             "question": question,
             "response": "",
