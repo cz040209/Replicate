@@ -11,6 +11,7 @@ import json
 from io import BytesIO
 import openai
 import pytz
+import time
 
 # Accessing the Sambanova API key from Streamlit secrets
 sambanova_api_key = st.secrets["general"]["SAMBANOVA_API_KEY"]
@@ -440,3 +441,27 @@ if st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
+
+# Function to measure the time and output quality of each model
+def measure_model_performance(model_id, text_to_process, question=None, action="summarize"):
+    start_time = time.time()
+    
+    # Generate the output based on action (summarize, translate, Q&A)
+    if action == "summarize":
+        output = summarize_text(text_to_process, model_id)
+    elif action == "translate":
+        output = translate_text(text_to_process, selected_language, model_id)
+    elif action == "qa":
+        output = get_qa_response(model_id, text_to_process, question)
+    
+    # Calculate the time taken to generate the response
+    elapsed_time = time.time() - start_time
+    
+    # Store the model performance data
+    performance_data = {
+        "model_id": model_id,
+        "execution_time": elapsed_time,
+        "output": output
+    }
+    
+    return performance_data
