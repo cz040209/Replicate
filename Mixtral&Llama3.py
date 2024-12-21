@@ -8,7 +8,6 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 import torch
 from PIL import Image
 import json
-from io import BytesIO
 
 # Hugging Face BLIP-2 Setup
 hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
@@ -362,4 +361,3 @@ if st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
-
