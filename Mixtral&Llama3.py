@@ -4,13 +4,16 @@ import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
-from transformers import BlipProcessor, BlipForConditionalGeneration
+from transformers import BlipProcessor, BlipForConditionalGeneration, Trainer, TrainingArguments
 import torch
 from PIL import Image
 import json
 from io import BytesIO
 import openai
 import pytz
+from datasets import load_dataset
+
+dataset = load_dataset("coco", split='train')
 
 # Accessing the Sambanova API key from Streamlit secrets
 sambanova_api_key = st.secrets["general"]["SAMBANOVA_API_KEY"]
@@ -56,6 +59,53 @@ client = SambanovaClient(api_key=sambanova_api_key, base_url=base_url)
 hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
 blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
 blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
+
+def preprocess_data(example):
+    # Load and preprocess the image
+    image = Image.open(example['image']).convert("RGB")
+    
+    # Preprocess the image and text (e.g., captions)
+    inputs = processor(images=image, text=example['text'], return_tensors="pt")
+    
+    return inputs
+
+# Define training arguments
+training_args = TrainingArguments(
+    output_dir="./blip2_finetuned",  # Directory to save the model checkpoints
+    evaluation_strategy="steps",  # Evaluate after every certain number of steps
+    logging_dir="./logs",  # Directory for logs
+    logging_steps=500,  # Log every 500 steps
+    per_device_train_batch_size=16,  # Batch size per device (GPU)
+    num_train_epochs=3,  # Number of epochs
+    learning_rate=5e-5,  # Learning rate
+    weight_decay=0.01,  # Weight decay for regularization
+)
+
+# Initialize Trainer
+trainer = Trainer(
+    model=model,  # The pre-trained model
+    args=training_args,  # Training arguments
+    data_collator=None,  # Data collator (can be a custom function if needed)
+    train_dataset=dataset,  # Training dataset
+    tokenizer=processor,  # Pre-trained processor for tokenization
+)
+
+# Fine-tune the model
+trainer.train()
+
+# Save the model
+trainer.save_model("./blip2_finetuned")
+
+# Evaluate the model on a validation dataset (if available)
+results = trainer.evaluate()
+print(results)
+
+
+image = Image.open("path_to_new_image.jpg").convert("RGB")
+inputs = processor(images=image, return_tensors="pt")
+output = model.generate(**inputs)
+caption = processor.decode(output[0], skip_special_tokens=True)
+print(caption)
 
 # Custom CSS for a more premium look
 st.markdown("""
@@ -215,19 +265,6 @@ def transcribe_audio(file):
         st.error(f"Error during transcription: {str(e)}")
         return None
 
-# Step 2: Function to Extract Text from Image using BLIP-2
-def extract_text_from_image(image_file):
-    # Open image from uploaded file
-    image = Image.open(image_file)
-
-    # Preprocess the image for the BLIP-2 model
-    inputs = blip_processor(images=image, return_tensors="pt")
-
-    # Generate the caption (text) for the image
-    out = blip_model.generate(**inputs)
-    caption = blip_processor.decode(out[0], skip_special_tokens=True)
-
-    return caption
 
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
