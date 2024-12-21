@@ -373,7 +373,6 @@ if content:
     tts.save("translated_response.mp3")
     st.audio("translated_response.mp3", format="audio/mp3")
 
-# Step 1: Only ask question when user input is provided (no prompt twice)
 if content and selected_model_id:
     # If the user is ready to ask a question, show a text input box
     if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
@@ -387,15 +386,18 @@ if content and selected_model_id:
             # Prepare the interaction data for history tracking
             interaction = {
                 "time": current_time,
-                "input_method": input_method,
+                "input_method": "Text Input",  # You can change this based on how the user submits questions
                 "question": question,
                 "response": "",
                 "content_preview": content[:100] if content else "No content available",
-                "start_time": time.time()  # Store the start time when the question is asked
+                "start_time": None,  # Will be set later when the model is selected
             }
 
             # Add the user question to the history
             st.session_state.history.append(interaction)
+
+            # Set the start time only when the user selects the model and sends the question
+            st.session_state.history[-1]["start_time"] = time.time()  # Start time when user asks question after selecting model
 
             # Send the question along with the content to the selected model API for the response
             url = f"{base_url}/chat/completions"
@@ -421,7 +423,7 @@ if content and selected_model_id:
                     st.session_state.history[-1]["response"] = answer
 
                     # Calculate processing time by subtracting start_time from current time
-                    end_time = time.time()
+                    end_time = time.time()  # Capture the time when the response is received
                     processing_time = end_time - st.session_state.history[-1]["start_time"]
 
                     # Display the model's response
@@ -438,6 +440,7 @@ if content and selected_model_id:
     else:
         # If there's already a response from the model, ask for follow-up questions
         st.write("You can ask more questions or clarify any points.")
+
 
 # Step 3: Display interaction history in the sidebar
 if st.session_state.history:
