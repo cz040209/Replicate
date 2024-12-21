@@ -14,6 +14,35 @@ import openai
 # API keys
 sambanova_api_key = st.secrets["general"]["SAMBANOVA_API_KEY"]
 
+class SambanovaClient:
+    def __init__(self, api_key, base_url):
+        # Initialize with API key and base URL
+        self.api_key = api_key
+        self.base_url = base_url
+        openai.api_key = self.api_key
+        openai.api_base = self.base_url  # Set the custom base URL for Sambanova
+
+    def chat(self, model, messages, temperature=0.7, top_p=1.0, max_tokens=500):
+        try:
+            # Make the API call using OpenAI's ChatCompletion API, pointing to Sambanova's base URL
+            response = openai.ChatCompletion.create(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                top_p=top_p
+            )
+            return response['choices'][0]['message']['content']  # Return the response content
+        except Exception as e:
+            # Catch errors and return a useful message
+            raise Exception(f"Error while calling Sambanova API: {str(e)}")
+
+# Initialize SambanovaClient with your API key and base URL
+sambanova_api_key = "your-sambanova-api-key-here"
+base_url = "https://api.sambanova.ai/v1"  # Correct Sambanova URL
+
+client = SambanovaClient(api_key=sambanova_api_key, base_url=base_url)
+
 # Hugging Face BLIP-2 Setup
 hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
 blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
