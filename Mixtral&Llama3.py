@@ -16,7 +16,7 @@ import pytz
 sambanova_api_key = st.secrets["general"]["SAMBANOVA_API_KEY"]
 
 class SambanovaClient:
-    def __init__(self, api_key, base_url):
+    def _init_(self, api_key, base_url):
         # Initialize with API key and base URL
         self.api_key = api_key
         self.base_url = base_url
@@ -153,16 +153,16 @@ def summarize_text(text, model_id):
 # Function to Translate Text Using the Selected Model
 def translate_text(text, target_language, model_id):
     url = f"{base_url}/chat/completions"
-        data = {
-            "model": model_id,
-            "messages": [
-                {"role": "system", "content": f"Translate the following text into {target_language}."},
-                {"role": "user", "content": text}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 300,
-            "top_p": 0.9
-        }
+    data = {
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": f"Translate the following text into {target_language}."},
+            {"role": "user", "content": text}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 300,
+        "top_p": 0.9
+    }
 
     try:
         response = requests.post(url, headers=headers, json=data)
@@ -467,7 +467,7 @@ if content:
                 "model": selected_model_id,
                 "messages": [
                     {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                    {"role": "system", "content": content},  # Ensure content is correctly passed
+                    {"role": "system", "content": content},
                     {"role": "user", "content": question}
                 ],
                 "temperature": 0.7,
@@ -497,9 +497,9 @@ if content:
 if st.session_state.history:
     st.sidebar.header("Interaction History")
     for idx, interaction in enumerate(st.session_state.history):
-        st.sidebar.markdown(f"**{interaction['time']}**")
-        st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")
-        st.sidebar.markdown(f"**Question**: {interaction['question']}")
-        st.sidebar.markdown(f"**Response**: {interaction['response']}")
-        st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
+        st.sidebar.markdown(f"{interaction['time']}")
+        st.sidebar.markdown(f"*Input Method*: {interaction['input_method']}")
+        st.sidebar.markdown(f"*Question*: {interaction['question']}")
+        st.sidebar.markdown(f"*Response*: {interaction['response']}")
+        st.sidebar.markdown(f"*Content Preview*: {interaction['content_preview']}")
         st.sidebar.markdown("---")
