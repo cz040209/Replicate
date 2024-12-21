@@ -8,8 +8,6 @@ python-dotenv
 openai
 pydub
 transformers
-torch
-torchaudio
 gTTS
 numpy
 openai
