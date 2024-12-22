@@ -11,7 +11,6 @@ import json
 from io import BytesIO
 import openai
 import pytz
-import time
 
 # Accessing the Sambanova API key from Streamlit secrets
 sambanova_api_key = st.secrets["general"]["SAMBANOVA_API_KEY"]
@@ -263,68 +262,6 @@ languages = [
 ]
 selected_language = st.selectbox("Choose your preferred language for output", languages)
 
-def split_text_into_chunks(text, max_tokens=500):
-    # Split text into chunks based on the max token limit
-    words = text.split()
-    chunks = []
-    current_chunk = []
-    current_length = 0
-
-    for word in words:
-        # Estimate the token length (this is a simplification)
-        word_length = len(word.split())
-        if current_length + word_length > max_tokens:
-            # If the chunk exceeds the token limit, start a new chunk
-            chunks.append(" ".join(current_chunk))
-            current_chunk = [word]
-            current_length = word_length
-        else:
-            current_chunk.append(word)
-            current_length += word_length
-
-    # Add the last chunk
-    if current_chunk:
-        chunks.append(" ".join(current_chunk))
-
-    return chunks
-
-
-
-def process_large_pdf_with_rate_limit(pdf_text, model_id, max_tokens=500, delay=60):
-    # Split the PDF text into chunks
-    text_chunks = split_text_into_chunks(pdf_text, max_tokens=max_tokens)
-
-    for chunk in text_chunks:
-        # Summarize each chunk
-        summary = summarize_text(chunk, model_id)
-        st.write(summary)
-
-        # Translate the summary to the selected language
-        translated_summary = translate_text(summary, selected_language, model_id)
-        st.write(f"Translated Summary in {selected_language}:")
-        st.write(translated_summary)
-
-        # Convert summary to audio in English (not translated)
-        tts = gTTS(text=summary, lang='en')  # Use English summary for audio
-        tts.save("response.mp3")
-        st.audio("response.mp3", format="audio/mp3")
-
-        # Add a delay between requests to avoid exceeding rate limits
-        time.sleep(delay)
-
-# Update your PDF handling section with this modified function
-if input_method == "Upload PDF":
-    uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
-
-    if uploaded_file:
-        st.write("Extracting text from the uploaded PDF...")
-        pdf_text = extract_text_from_pdf(uploaded_file)
-        st.success("Text extracted successfully!")
-
-        # Process the PDF with rate limiting
-        process_large_pdf_with_rate_limit(pdf_text, selected_model_id, max_tokens=500, delay=60)
-
-
 # Handle different input methods
 if input_method == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
@@ -435,6 +372,7 @@ if content:
     tts.save("translated_response.mp3")
     st.audio("translated_response.mp3", format="audio/mp3")
 
+# Step 1: Only ask question when user input is provided (no prompt twice)
 if content and selected_model_id:
     # If the user is ready to ask a question, show a text input box
     if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
@@ -448,18 +386,14 @@ if content and selected_model_id:
             # Prepare the interaction data for history tracking
             interaction = {
                 "time": current_time,
-                "input_method": "Text Input",  # You can change this based on how the user submits questions
+                "input_method": input_method,
                 "question": question,
                 "response": "",
-                "content_preview": content[:100] if content else "No content available",
-                "start_time": None,  # Will be set later when the model is selected
+                "content_preview": content[:100] if content else "No content available"
             }
 
             # Add the user question to the history
             st.session_state.history.append(interaction)
-
-            # Set the start time only when the user selects the model and sends the question
-            st.session_state.history[-1]["start_time"] = time.time()  # Start time when user asks question after selecting model
 
             # Send the question along with the content to the selected model API for the response
             url = f"{base_url}/chat/completions"
@@ -484,15 +418,8 @@ if content and selected_model_id:
                     # Store the model's answer in the interaction history
                     st.session_state.history[-1]["response"] = answer
 
-                    # Calculate processing time by subtracting start_time from current time
-                    end_time = time.time()  # Capture the time when the response is received
-                    processing_time = end_time - st.session_state.history[-1]["start_time"]
-
                     # Display the model's response
                     st.write(f"Answer: {answer}")
-
-                    # Display the processing time below the model's answer
-                    st.write(f"Processing Time: {processing_time:.2f} seconds")
 
                 else:
                     st.write(f"Error {response.status_code}: {response.text}")
@@ -502,7 +429,6 @@ if content and selected_model_id:
     else:
         # If there's already a response from the model, ask for follow-up questions
         st.write("You can ask more questions or clarify any points.")
-
 
 # Step 3: Display interaction history in the sidebar
 if st.session_state.history:
@@ -514,5 +440,3 @@ if st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
-
-
