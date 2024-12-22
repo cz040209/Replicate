@@ -407,7 +407,7 @@ if st.sidebar.button("Start a New Chat"):
     st.session_state['selected_language'] = "English"  # Optionally reset the language
     
     # Optionally, reset UI components, such as resetting dropdowns or text fields
-    st.experimental_rerun()  # Refresh the app to reflect the changes
+    st.rerun()  # Refresh the app to reflect the changes
 
 # Sidebar header for the chat history
 if "history" in st.session_state and st.session_state.history:
