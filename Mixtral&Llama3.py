@@ -245,6 +245,8 @@ if input_method == "Upload PDF":
             st.write("Summary:")
             st.write(summary)
 
+            st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
+
             # Translate the summary to the selected language
             translated_summary = translate_text(summary, selected_language, selected_model_id)
             st.write(f"Translated Summary in {selected_language}:")
