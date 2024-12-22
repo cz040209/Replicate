@@ -285,7 +285,7 @@ elif input_method == "Enter Text Manually":
             st.audio("response.mp3", format="audio/mp3")
 
 # Step 1: After uploading image or audio, user selects model for translation and Q&A
-if input_method == "Upload Image":
+elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
     
     if uploaded_image:
@@ -324,9 +324,10 @@ elif input_method == "Upload Audio":
     else:
         st.error("Please upload an audio file to proceed.")
 
-        # Select a model for translation and Q&A
-        selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="audio_model_selection")
-        selected_model_id = available_models.get(selected_model_name)
+    # Select a model for translation and Q&A
+    selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="audio_model_selection")
+    selected_model_id = available_models.get(selected_model_name)
+
 
 # Translation of the extracted text to selected language
 if content:
