@@ -221,23 +221,23 @@ languages = [
 ]
 selected_language = st.selectbox("Choose your preferred language for output", languages)
 
-elif input_method == "Upload PDF":
-    uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
-
-    if uploaded_file:
-        # Extract text from the uploaded PDF
-        st.write("Extracting text from the uploaded PDF...")
-        pdf_text = extract_text_from_pdf(uploaded_file)
-        st.success("Text extracted successfully!")
-
-        # Display extracted text with adjusted font size
-        with st.expander("View Extracted Text"):
-            st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
-
-        # Assign extracted text to content for chat
-        content = pdf_text
-    else:
-        st.error("Please upload a PDF file to proceed.")
+    elif input_method == "Upload PDF":
+        uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
+    
+        if uploaded_file:
+            # Extract text from the uploaded PDF
+            st.write("Extracting text from the uploaded PDF...")
+            pdf_text = extract_text_from_pdf(uploaded_file)
+            st.success("Text extracted successfully!")
+    
+            # Display extracted text with adjusted font size
+            with st.expander("View Extracted Text"):
+                st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
+    
+            # Assign extracted text to content for chat
+            content = pdf_text
+        else:
+            st.error("Please upload a PDF file to proceed.")
 
         # Summarize the extracted text only when the button is clicked
         if st.button("Summarize Text"):
