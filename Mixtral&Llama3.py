@@ -395,8 +395,22 @@ if content and selected_model_id:
         # If there's already a response from the model, ask for follow-up questions
         st.write("You can ask more questions or clarify any points.")
 
-# Step 6: Display interaction history in the sidebar
-if st.session_state.history:
+# Add "Start a New Chat" button to the sidebar
+if st.sidebar.button("Start a New Chat"):
+    # Clear the session state for history and other relevant variables
+    st.session_state.history = []
+    st.session_state['content'] = ''
+    st.session_state['selected_model_id'] = None
+    st.session_state['manual_text'] = ''
+    st.session_state['uploaded_file'] = None
+    st.session_state['uploaded_audio'] = None
+    st.session_state['uploaded_image'] = None
+    st.session_state['selected_language'] = "English"
+    # Optionally reset UI components to their default state (if required)
+    st.experimental_rerun()  # Rerun the app to refresh the page
+
+# Sidebar header for the chat history
+if "history" in st.session_state and st.session_state.history:
     st.sidebar.header("Interaction History")
     for idx, interaction in enumerate(st.session_state.history):
         st.sidebar.markdown(f"**{interaction['time']}**")
