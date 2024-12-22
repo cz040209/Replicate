@@ -323,8 +323,6 @@ elif input_method == "Upload Audio":
 # Translation of the extracted text to selected language
 if content:
     translated_content = translate_text(content, selected_language, selected_model_id)
-    st.write(f"Translated content in {selected_language}:")
-    st.write(translated_content)
 
     # Convert the translated content to speech (if needed)
     tts = gTTS(text=translated_content, lang='en')  # For demonstration in English
