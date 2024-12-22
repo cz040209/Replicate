@@ -113,9 +113,8 @@ headers = {
 # Available models, including the two new Sambanova models
 available_models = {
     "Mixtral 8x7b": "mixtral-8x7b-32768",
-    "Llama 3.1 70b Versatile": "llama-3.1-70b-versatile",
-    "Qwen 2.5-72B-Instruct": "sambanova-qwen-2.5-72b-instruct",
-    "Meta-Llama 3.2-1B-Instruct": "sambanova-meta-llama-3.2-1b-instruct"
+    "Llama-3.1-8b-instant": "llama-3.1-8b-instant",
+    "gemma2-9b-it": "gemma2-9b-it",
 }
 
 # Step 1: Function to Extract Text from PDF
