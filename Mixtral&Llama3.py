@@ -263,6 +263,68 @@ languages = [
 ]
 selected_language = st.selectbox("Choose your preferred language for output", languages)
 
+def split_text_into_chunks(text, max_tokens=500):
+    # Split text into chunks based on the max token limit
+    words = text.split()
+    chunks = []
+    current_chunk = []
+    current_length = 0
+
+    for word in words:
+        # Estimate the token length (this is a simplification)
+        word_length = len(word.split())
+        if current_length + word_length > max_tokens:
+            # If the chunk exceeds the token limit, start a new chunk
+            chunks.append(" ".join(current_chunk))
+            current_chunk = [word]
+            current_length = word_length
+        else:
+            current_chunk.append(word)
+            current_length += word_length
+
+    # Add the last chunk
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+
+    return chunks
+
+
+
+def process_large_pdf_with_rate_limit(pdf_text, model_id, max_tokens=500, delay=60):
+    # Split the PDF text into chunks
+    text_chunks = split_text_into_chunks(pdf_text, max_tokens=max_tokens)
+
+    for chunk in text_chunks:
+        # Summarize each chunk
+        summary = summarize_text(chunk, model_id)
+        st.write(summary)
+
+        # Translate the summary to the selected language
+        translated_summary = translate_text(summary, selected_language, model_id)
+        st.write(f"Translated Summary in {selected_language}:")
+        st.write(translated_summary)
+
+        # Convert summary to audio in English (not translated)
+        tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+        tts.save("response.mp3")
+        st.audio("response.mp3", format="audio/mp3")
+
+        # Add a delay between requests to avoid exceeding rate limits
+        time.sleep(delay)
+
+# Update your PDF handling section with this modified function
+if input_method == "Upload PDF":
+    uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
+
+    if uploaded_file:
+        st.write("Extracting text from the uploaded PDF...")
+        pdf_text = extract_text_from_pdf(uploaded_file)
+        st.success("Text extracted successfully!")
+
+        # Process the PDF with rate limiting
+        process_large_pdf_with_rate_limit(pdf_text, selected_model_id, max_tokens=500, delay=60)
+
+
 # Handle different input methods
 if input_method == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
