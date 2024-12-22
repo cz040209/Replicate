@@ -221,8 +221,7 @@ languages = [
 ]
 selected_language = st.selectbox("Choose your preferred language for output", languages)
 
-# Handle different input methods
-if input_method == "Upload PDF":
+elif input_method == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
 
     if uploaded_file:
@@ -237,6 +236,8 @@ if input_method == "Upload PDF":
 
         # Assign extracted text to content for chat
         content = pdf_text
+    else:
+        st.error("Please upload a PDF file to proceed.")
 
         # Summarize the extracted text only when the button is clicked
         if st.button("Summarize Text"):
@@ -260,8 +261,9 @@ if input_method == "Upload PDF":
 elif input_method == "Enter Text Manually":
     manual_text = st.text_area("Enter your text manually:")
 
-    if manual_text:
-        # Assign entered text to content for chat
+    if not manual_text:
+        st.error("Please enter some text to proceed.")
+    else:
         content = manual_text
 
         if st.button("Summarize Text"):
@@ -308,7 +310,7 @@ elif input_method == "Upload Audio":
 
     if uploaded_audio:
         st.write("Audio file uploaded. Processing audio...")
-        
+
         # Transcribe using Groq's Whisper API
         transcript = transcribe_audio(uploaded_audio)
         if transcript:
@@ -317,6 +319,8 @@ elif input_method == "Upload Audio":
             content = transcript  # Set the transcription as content
         else:
             st.error("Failed to transcribe the audio.")
+    else:
+        st.error("Please upload an audio file to proceed.")
 
         # Select a model for translation and Q&A
         selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="audio_model_selection")
