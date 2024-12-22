@@ -221,8 +221,8 @@ languages = [
 ]
 selected_language = st.selectbox("Choose your preferred language for output", languages)
 
-
-elif input_method == "Upload PDF":
+# Step 1: Handle PDF Upload
+if input_method == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
     
     if uploaded_file:
@@ -259,7 +259,7 @@ elif input_method == "Upload PDF":
         tts.save("response.mp3")
         st.audio("response.mp3", format="audio/mp3")
 
-
+# Step 2: Handle Manual Text Input
 elif input_method == "Enter Text Manually":
     manual_text = st.text_area("Enter your text manually:")
 
@@ -284,7 +284,7 @@ elif input_method == "Enter Text Manually":
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
 
-# Step 1: After uploading image or audio, user selects model for translation and Q&A
+# Step 3: Handle Image Upload
 elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
     
@@ -307,6 +307,7 @@ elif input_method == "Upload Image":
         selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
         selected_model_id = available_models.get(selected_model_name)
 
+# Step 4: Handle Audio Upload
 elif input_method == "Upload Audio":
     uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
 
@@ -328,7 +329,6 @@ elif input_method == "Upload Audio":
     selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="audio_model_selection")
     selected_model_id = available_models.get(selected_model_name)
 
-
 # Translation of the extracted text to selected language
 if content:
     translated_content = translate_text(content, selected_language, selected_model_id)
@@ -338,9 +338,8 @@ if content:
     tts.save("translated_response.mp3")
     st.audio("translated_response.mp3", format="audio/mp3")
 
-# Step 1: Only ask question when user input is provided (no prompt twice)
+# Step 5: Allow user to ask questions about the content (if any)
 if content and selected_model_id:
-    # If the user is ready to ask a question, show a text input box
     if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
         question = st.text_input("Ask a question about the content:")
 
@@ -396,7 +395,7 @@ if content and selected_model_id:
         # If there's already a response from the model, ask for follow-up questions
         st.write("You can ask more questions or clarify any points.")
 
-# Step 3: Display interaction history in the sidebar
+# Step 6: Display interaction history in the sidebar
 if st.session_state.history:
     st.sidebar.header("Interaction History")
     for idx, interaction in enumerate(st.session_state.history):
