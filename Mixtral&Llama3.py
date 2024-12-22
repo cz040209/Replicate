@@ -221,42 +221,44 @@ languages = [
 ]
 selected_language = st.selectbox("Choose your preferred language for output", languages)
 
-    elif input_method == "Upload PDF":
-        uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
+
+elif input_method == "Upload PDF":
+    uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
     
-        if uploaded_file:
-            # Extract text from the uploaded PDF
-            st.write("Extracting text from the uploaded PDF...")
-            pdf_text = extract_text_from_pdf(uploaded_file)
-            st.success("Text extracted successfully!")
+    if uploaded_file:
+        # Extract text from the uploaded PDF
+        st.write("Extracting text from the uploaded PDF...")
+        pdf_text = extract_text_from_pdf(uploaded_file)
+        st.success("Text extracted successfully!")
     
-            # Display extracted text with adjusted font size
-            with st.expander("View Extracted Text"):
-                st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
+        # Display extracted text with adjusted font size
+        with st.expander("View Extracted Text"):
+            st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
     
-            # Assign extracted text to content for chat
-            content = pdf_text
-        else:
-            st.error("Please upload a PDF file to proceed.")
+        # Assign extracted text to content for chat
+        content = pdf_text
+    else:
+        st.error("Please upload a PDF file to proceed.")
 
-        # Summarize the extracted text only when the button is clicked
-        if st.button("Summarize Text"):
-            st.write("Summarizing the text...")
-            summary = summarize_text(pdf_text, selected_model_id)
-            st.write("Summary:")
-            st.write(summary)
+    # Summarize the extracted text only when the button is clicked
+    if st.button("Summarize Text"):
+        st.write("Summarizing the text...")
+        summary = summarize_text(pdf_text, selected_model_id)
+        st.write("Summary:")
+        st.write(summary)
 
-            st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
+        st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
 
-            # Translate the summary to the selected language
-            translated_summary = translate_text(summary, selected_language, selected_model_id)
-            st.write(f"Translated Summary in {selected_language}:")
-            st.write(translated_summary)
+        # Translate the summary to the selected language
+        translated_summary = translate_text(summary, selected_language, selected_model_id)
+        st.write(f"Translated Summary in {selected_language}:")
+        st.write(translated_summary)
 
-            # Convert summary to audio in English (not translated)
-            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
-            tts.save("response.mp3")
-            st.audio("response.mp3", format="audio/mp3")
+        # Convert summary to audio in English (not translated)
+        tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+        tts.save("response.mp3")
+        st.audio("response.mp3", format="audio/mp3")
+
 
 elif input_method == "Enter Text Manually":
     manual_text = st.text_area("Enter your text manually:")
