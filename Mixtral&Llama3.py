@@ -338,62 +338,7 @@ if content:
     tts.save("translated_response.mp3")
     st.audio("translated_response.mp3", format="audio/mp3")
 
-# Step 5: Allow user to ask questions about the content (if any)
-if content and selected_model_id:
-    if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
-        question = st.text_input("Ask a question about the content:")
 
-        if question:
-            # Set the timezone to Malaysia for the timestamp
-            malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
-            current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
-
-            # Prepare the interaction data for history tracking
-            interaction = {
-                "time": current_time,
-                "input_method": input_method,
-                "question": question,
-                "response": "",
-                "content_preview": content[:100] if content else "No content available"
-            }
-
-            # Add the user question to the history
-            st.session_state.history.append(interaction)
-
-            # Send the question along with the content to the selected model API for the response
-            url = f"{base_url}/chat/completions"
-            data = {
-                "model": selected_model_id,
-                "messages": [
-                    {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                    {"role": "system", "content": content},
-                    {"role": "user", "content": question}
-                ],
-                "temperature": 0.7,
-                "max_tokens": 200,
-                "top_p": 0.9
-            }
-
-            try:
-                response = requests.post(url, headers=headers, json=data)
-                if response.status_code == 200:
-                    result = response.json()
-                    answer = result['choices'][0]['message']['content']
-
-                    # Store the model's answer in the interaction history
-                    st.session_state.history[-1]["response"] = answer
-
-                    # Display the model's response
-                    st.write(f"Answer: {answer}")
-
-                else:
-                    st.write(f"Error {response.status_code}: {response.text}")
-            except requests.exceptions.RequestException as e:
-                st.write(f"An error occurred: {e}")
-        
-    else:
-        # If there's already a response from the model, ask for follow-up questions
-        st.write("You can ask more questions or clarify any points.")
 
 # Add "Start a New Chat" button to the sidebar
 if st.sidebar.button("Start a New Chat"):
