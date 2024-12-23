@@ -394,8 +394,7 @@ if "history" in st.session_state and st.session_state.history:
 
 # Add "Start a New Chat" button to the sidebar
 if st.sidebar.button("Start a New Chat"):
-    # Reset the session state variables related to content and interactions
-    st.session_state['history'] = []  # Clear chat history
+    # Clear only the current session state variables related to the ongoing conversation (question, answer, and content)
     st.session_state['content'] = ''  # Clear the current content
     st.session_state['question_input'] = ''  # Clear the last question input
     st.session_state['uploaded_file'] = None  # Clear the uploaded file (PDF or Image)
@@ -405,6 +404,7 @@ if st.sidebar.button("Start a New Chat"):
     st.session_state['audio_transcript'] = ''  # Clear audio transcription text
     st.session_state['response_audio'] = None  # Clear the response audio
     st.rerun()  # Refresh the app to reflect the changes
+
 
 
 # Text area input with placeholder "Message Botify" without extra label
