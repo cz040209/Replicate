@@ -411,8 +411,8 @@ if content and selected_model_id:
 
 # Add "Start a New Chat" button to the sidebar
 if st.sidebar.button("Start a New Chat"):
-    # Clear all the session state variables related to the current chat
-    st.session_state['content'] = ''  # Clear the current content
+    # Clear all session state variables related to the current chat
+    st.session_state['content'] = ''  # Clear the current extracted text
     st.session_state['uploaded_file'] = None  # Clear any uploaded PDF
     st.session_state['uploaded_audio'] = None  # Clear any uploaded audio
     st.session_state['manual_text'] = ''  # Clear any manually entered text
@@ -427,13 +427,17 @@ if st.sidebar.button("Start a New Chat"):
     st.session_state['translated_content'] = ''  # Clear any translated content
     st.session_state['audio_file'] = None  # Clear any audio content generated for speech
     
-    # Reset the input method and model selection
+    # Reset input method and model selection
     st.session_state['input_method'] = None
     st.session_state['selected_model_name'] = None  # Reset model selection
     st.session_state['manual_text'] = ''
     
-    # Optionally, reset UI components, such as resetting dropdowns or text fields
+    # Reset extracted content (which could be from PDF, image, audio)
+    st.session_state['extracted_text'] = ''  # Clear extracted text from any source
+
+    # Optionally, reset UI components like dropdowns or text fields
     st.rerun()  # Refresh the app to reflect the changes
+
 
 
 
