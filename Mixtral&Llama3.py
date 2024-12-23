@@ -496,6 +496,7 @@ def ask_question(question):
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
+
 # Ask the question when the "Send" button is pressed
 if send_button:
     # Debugging check: print values of 'question' and 'selected_model_id'
