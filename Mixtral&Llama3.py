@@ -345,7 +345,7 @@ if content:
 
 
 # Add "Start New" button in the sidebar
-start_new_button = st.sidebar.button("Start New", key="start_new_button", help="Click to start a new conversation and clear all chat content")
+start_new_button = st.sidebar.button("Start New Chat", key="start_new_button", help="Click to start a new conversation and clear all chat content")
 
 # Function to reset chat content and history
 def start_new_conversation():
