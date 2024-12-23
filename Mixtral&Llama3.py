@@ -411,59 +411,11 @@ if st.sidebar.button("Start a New Chat"):
 
 
 
-# Initialize content variable for any previous input (e.g., extracted text or user input)
-content = st.session_state.get("content", "")
+# Text area input with placeholder "Message Botify"
+question = st.text_area("", placeholder="Message Botify", height=150, key="question_input")
 
-# Create a custom container with a text area and a triangle arrow icon inside
-st.markdown("""
-    <style>
-        .input-container {
-            position: relative;
-            width: 100%;
-            border-radius: 10px;  /* Rounded corners for the container */
-            background-color: #f7f7f7;  /* Light background for the container */
-            padding: 10px;
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);  /* Soft shadow effect */
-        }
-        .input-container textarea {
-            width: 100%;
-            height: 150px;
-            padding-right: 35px; /* Add space on the right for the icon */
-            box-sizing: border-box;
-            border-radius: 10px;  /* Rounded corners for the textarea */
-            border: 1px solid #dcdcdc;  /* Light border */
-            background-color: white;  /* White background for the text area */
-            font-size: 16px;  /* Slightly larger text */
-            color: #333;  /* Dark text color */
-            padding: 12px;  /* Add padding inside the text area */
-            transition: border 0.3s ease;  /* Smooth border color transition */
-        }
-        .input-container textarea:focus {
-            border-color: #007bff;  /* Blue border when focused */
-            outline: none;  /* Remove default outline */
-        }
-        .send-icon {
-            position: absolute;
-            right: 10px;
-            bottom: 10px;
-            font-size: 24px;  /* Increase icon size */
-            cursor: pointer;
-            color: #007bff;  /* Blue color for the send icon */
-        }
-    </style>
-    <div class="input-container">
-        <textarea id="question_input" placeholder="Message Botify" class="css-1bp68v4"></textarea>
-        <span class="send-icon" onclick="sendMessage()">▶</span> <!-- Triangle arrow icon here -->
-    </div>
-    <script>
-        function sendMessage() {
-            const question = document.getElementById('question_input').value;
-            if (question.trim()) {
-                window.parent.postMessage({question: question}, "*");
-            }
-        }
-    </script>
-""", unsafe_allow_html=True)
+# Add a "Send" button styled with an arrow
+send_button = st.button("Send", key="send_button", help="Click to send your message")
 
 # Function to handle question submission and API request
 def ask_question(question):
