@@ -343,6 +343,8 @@ elif input_method == "Upload Audio":
 if content:
     translated_content = translate_text(content, selected_language, selected_model_id)
 
+
+
 # Step 5: Allow user to ask questions about the content (if any)
 if content and selected_model_id:
     if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
@@ -365,6 +367,9 @@ if content and selected_model_id:
             # Add the user question to the history
             st.session_state.history.append(interaction)
 
+            # Track start time for response calculation
+            start_time = time.time()
+
             # Send the question along with the content to the selected model API for the response
             url = f"{base_url}/chat/completions"
             data = {
@@ -380,7 +385,13 @@ if content and selected_model_id:
             }
 
             try:
+                # Send the request to the API
                 response = requests.post(url, headers=headers, json=data)
+
+                # Track end time for response calculation
+                end_time = time.time()
+                response_time = end_time - start_time
+
                 if response.status_code == 200:
                     result = response.json()
                     answer = result['choices'][0]['message']['content']
@@ -390,6 +401,7 @@ if content and selected_model_id:
 
                     # Display the model's response
                     st.write(f"Answer: {answer}")
+                    st.write(f"Response Time: {response_time:.2f} seconds")
 
                     # Now calculate ROUGE scores between the answer and the content (or summary)
                     if 'generated_summary' in st.session_state:
@@ -409,10 +421,10 @@ if content and selected_model_id:
                     st.write(f"Error {response.status_code}: {response.text}")
             except requests.exceptions.RequestException as e:
                 st.write(f"An error occurred: {e}")
-
     else:
         # If there's already a response from the model, ask for follow-up questions
         st.write("You can ask more questions or clarify any points.")
+        
 
 # Display the interaction history in the sidebar with clickable expanders
 if "history" in st.session_state and st.session_state.history:
