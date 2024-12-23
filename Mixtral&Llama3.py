@@ -459,17 +459,55 @@ def ask_question(question):
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
-
-# Ask the question when the "Send" button is pressed
-if send_button:
-    ask_question(question)
-
-
-# Add a "Start New Chat" button to reset the session state
-if st.button("Start New Chat"):
+# Sidebar: Add a "Start New Chat" button to reset the session state
+if st.sidebar.button("Start New Chat"):
     # Clear the history and content from session state
     st.session_state['history'] = []  # Clear the history
     st.session_state['content'] = ''  # Clear the content
     st.session_state['question_input'] = ''  # Clear the question input
     st.sidebar.success("Chat history and content have been cleared!")  # Show a success message
     st.rerun()  # Refresh the app to reset the chat state
+
+# Sidebar: Display the interaction history with expanders
+if "history" in st.session_state and st.session_state.history:
+    st.sidebar.header("Interaction History")
+
+    # Add the "Clear History" button to reset the interaction history
+    if st.sidebar.button("Clear History"):
+        # Clear the history and content from session state
+        st.session_state['history'] = []
+        st.session_state['content'] = ''
+        st.session_state['question_input'] = ''
+        st.sidebar.success("History has been cleared!")
+        st.rerun()  # Refresh the app to reflect the changes
+
+    # Display the history with expanders
+    for idx, interaction in enumerate(st.session_state.history):
+        with st.sidebar.expander(f"Interaction {idx+1} - {interaction['time']}"):
+            st.markdown(f"*Question*: {interaction['question']}")
+            st.markdown(f"*Response*: {interaction['response']}")
+            st.markdown(f"*Content Preview*: {interaction['content_preview']}")
+
+            # Add a button to let the user pick this interaction to continue
+            if st.button(f"Continue with Interaction {idx+1}", key=f"continue_{idx}"):
+                # Load the selected interaction into the current session state for continuation
+                st.session_state['content'] = interaction['response']  # Set the response as current content
+                st.session_state['question_input'] = interaction['question']  # Load the last question as the input text
+                
+                # Do not add a new history entry; just continue from the last response
+                st.session_state['history'] = st.session_state['history'][:idx+1]  # Keep the history up to the selected interaction
+                st.rerun()  # Rerun the app to update the chat flow
+
+# Text area input with placeholder "Message Botify" without extra label
+question = st.text_area("", 
+                        st.session_state.get('question_input', ''),  # Use session state for preserving input
+                        key="question_input", 
+                        placeholder="Message Botify",  # Placeholder text
+                        height=150)  # Adjust the height as needed
+
+# Add a "Send" button styled with an arrow
+send_button = st.button("Send", key="send_button", help="Click to send your message")
+
+# Ask the question when the "Send" button is pressed
+if send_button:
+    ask_question(question)
