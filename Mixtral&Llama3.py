@@ -11,6 +11,12 @@ import json
 from io import BytesIO
 import openai
 import pytz
+import google.generativeai as genai
+
+# Load API Key from Streamlit secrets
+api_key = st.secrets["gemini_api"]["api_key"]
+
+genai.configure(api_key=api_key)
 
 # Hugging Face BLIP-2 Setup
 hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
@@ -75,6 +81,7 @@ available_models = {
     "Mixtral 8x7b": "mixtral-8x7b-32768",
     "Llama-3.1-8b-instant": "llama-3.1-8b-instant",
     "gemma2-9b-it": "gemma2-9b-it",
+    "Gemini-1.5-Flash-8B": "gemini-1.5-flash-8b"
 }
 
 # Step 1: Function to Extract Text from PDF
