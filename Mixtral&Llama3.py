@@ -414,8 +414,31 @@ if st.sidebar.button("Start a New Chat"):
 # Initialize content variable for any previous input (e.g., extracted text or user input)
 content = st.session_state.get("content", "")
 
-# Step 1: Ask question with a blank input box and custom prompt (as placeholder)
+# Step 1: Create the text area for input
+st.markdown("""
+    <style>
+        .send-button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #61dafb;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            margin-left: 10px;
+        }
+        .send-button:hover {
+            background-color: #4fa3e4;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Text area input with placeholder "Message Botify"
 question = st.text_area("", placeholder="Message Botify", height=150, key="question_input")
+
+# Add a "Send" button styled as an icon
+send_button = st.button("Send", key="send_button", help="Click to send your message")
 
 # Function to handle question submission and API request
 def ask_question(question):
@@ -461,8 +484,8 @@ def ask_question(question):
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
-# Ask the question when the input is provided
-if question:
+# Ask the question when the "Send" button is pressed
+if send_button:
     ask_question(question)
 
 # Display the interaction history in the sidebar
