@@ -356,7 +356,7 @@ def start_new_conversation():
     st.session_state['generated_summary'] = ''  # Clear the generated summary if any
     st.session_state['pdf_text'] = ''  # Clear PDF text
     st.session_state['question_input'] = ''  # Reset the question input field
-    st.experimental_rerun()  # Refresh the app to reflect changes
+    st.rerun()  # Refresh the app to reflect changes
 
 # If the "Start New" button is pressed in the sidebar, clear session state and restart
 if start_new_button:
