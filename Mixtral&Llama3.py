@@ -456,22 +456,6 @@ if "history" in st.session_state and st.session_state.history:
                 st.session_state['history'] = st.session_state['history'][:idx+1]  # Keep the history up to the selected interaction
                 st.rerun()  # Rerun the app to update the chat flow
 
-# Add "Start a New Chat" button to the sidebar
-if st.sidebar.button("Start a New Chat"):
-    # Clear only the current session state variables related to the ongoing conversation (question, answer, and content)
-    st.session_state['content'] = ''  # Clear the current content
-    st.session_state['question_input'] = ''  # Clear the last question input
-    st.session_state['uploaded_file'] = None  # Clear the uploaded file (PDF or Image)
-    st.session_state['uploaded_audio'] = None  # Clear the uploaded audio file
-    st.session_state['image_text'] = ''  # Clear the image text (BLIP-2 extraction)
-    st.session_state['pdf_text'] = ''  # Clear the PDF text extraction
-    st.session_state['audio_transcript'] = ''  # Clear audio transcription text
-    st.session_state['response_audio'] = None  # Clear the response audio
-    st.session_state['question_input'] = ''  # Clear the question input to reset it
-    
-    # Rerun the app to reflect the changes
-    st.rerun()
-
 
 # Text area input with placeholder "Message Botify" without extra label
 question = st.text_area("", 
