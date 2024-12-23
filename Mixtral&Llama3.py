@@ -179,19 +179,30 @@ def transcribe_audio(file):
         st.error(f"Error during transcription: {str(e)}")
         return None
 
-# Step 2: Function to Extract Text from Image using BLIP-2
+# Step 2: Function to Extract Text from Image using Gemini 1.5
 def extract_text_from_image(image_file):
     # Open image from uploaded file
     image = Image.open(image_file)
 
-    # Preprocess the image for the BLIP-2 model
-    inputs = blip_processor(images=image, return_tensors="pt")
+    # Convert image to bytes for sending to the API
+    img_byte_arr = BytesIO()
+    image.save(img_byte_arr, format="PNG")
+    img_byte_arr = img_byte_arr.getvalue()
 
-    # Generate the caption (text) for the image
-    out = blip_model.generate(**inputs)
-    caption = blip_processor.decode(out[0], skip_special_tokens=True)
+    # Send image data to the Gemini model for captioning
+    try:
+        # Use the Gemini 1.5 Flash 8B model to generate text from image
+        response = genai.generate_text_from_image(
+            model="gemini-1.5-flash-8b",
+            image=img_byte_arr
+        )
 
-    return caption
+        # Extract the caption (text) from the response
+        caption = response['generated_text']
+        return caption
+    except Exception as e:
+        st.error(f"Error extracting text from image using Gemini: {str(e)}")
+        return None
 
 # Input Method Selection
 input_method = st.selectbox("Select Input Method", ["Upload PDF", "Enter Text Manually", "Upload Audio", "Upload Image"])
@@ -294,19 +305,36 @@ elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
     
     if uploaded_image:
-        st.write("Image uploaded. Extracting text using BLIP-2...")
+        st.write("Image uploaded. Extracting text using Gemini 1.5 Flash 8B...")
+
+        # Open image from uploaded file
+        image = Image.open(uploaded_image)
+
+        # Convert image to bytes for sending to the API
+        img_byte_arr = BytesIO()
+        image.save(img_byte_arr, format="PNG")
+        img_byte_arr = img_byte_arr.getvalue()
+
+        # Send image data to the Gemini model for captioning
         try:
-            # Extract text using BLIP-2
-            image_text = extract_text_from_image(uploaded_image)
+            # Use the Gemini 1.5 Flash 8B model to generate text from image
+            response = genai.generate_text_from_image(
+                model="gemini-1.5-flash-8b",
+                image=img_byte_arr
+            )
+
+            # Extract the caption (text) from the response
+            image_text = response['generated_text']
             st.success("Text extracted successfully!")
 
             # Display extracted text with adjusted font size
             with st.expander("View Extracted Text"):
                 st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
 
+            # Set extracted text as content for further processing
             content = image_text
         except Exception as e:
-            st.error(f"Error extracting text from image: {e}")
+            st.error(f"Error extracting text from image using Gemini: {str(e)}")
 
         # Select a model for translation and Q&A
         selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
