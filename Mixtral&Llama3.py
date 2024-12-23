@@ -17,7 +17,7 @@ hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
 blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
 blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
 
-# Custom CSS for a more premium look
+# Custom CSS for a more premium look, including sticky button
 st.markdown("""
     <style>
         .css-1d391kg {
@@ -53,6 +53,20 @@ st.markdown("""
             text-align: center;
             margin-top: 50px;
             margin-bottom: 30px;
+        }
+
+        /* Sticky Sidebar button CSS */
+        .stSidebar .css-1v0m2ju {
+            position: sticky;
+            top: 0;  /* Make it stick to the top of the sidebar */
+            z-index: 1000;  /* Ensure it stays on top of other elements */
+            background-color: #282c34;  /* Light background for the sidebar */
+            padding: 10px 0;  /* Some padding */
+        }
+        .stSidebar button {
+            position: sticky;
+            top: 20px;  /* Add some space from the top */
+            z-index: 1000;  /* Keep it above the scrollable content */
         }
     </style>
 """, unsafe_allow_html=True)
@@ -408,6 +422,7 @@ if st.sidebar.button("Start a New Chat"):
     
     # Optionally, reset UI components, such as resetting dropdowns or text fields
     st.rerun()  # Refresh the app to reflect the changes
+
 
 # Sidebar header for the chat history
 if "history" in st.session_state and st.session_state.history:
