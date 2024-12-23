@@ -250,9 +250,6 @@ def extract_text_from_image(image_file):
 
     return caption
 
-# Input Method Selection
-input_method = st.selectbox("Select Input Method", ["Upload PDF", "Upload Audio", "Upload Image"])
-
 # Model selection - Available only for PDF and manual text input
 if input_method in ["Upload PDF"]:
     selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
