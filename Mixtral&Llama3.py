@@ -415,7 +415,7 @@ if st.sidebar.button("Start a New Chat"):
 content = st.session_state.get("content", "")
 
 # Step 1: Ask question with a blank input box and custom prompt (as placeholder)
-question = st.text_input("", placeholder="Message Botify", key="question_input")
+question = st.text_area("", placeholder="Message Botify", height=150, key="question_input")
 
 # Function to handle question submission and API request
 def ask_question(question):
