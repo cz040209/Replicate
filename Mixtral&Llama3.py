@@ -414,12 +414,8 @@ if st.sidebar.button("Start a New Chat"):
 # Initialize content variable for any previous input (e.g., extracted text or user input)
 content = st.session_state.get("content", "")
 
-# Model selection dropdown
-selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
-selected_model_id = available_models.get(selected_model_name)
-
-# Step 1: Ask question with a blank input box and custom prompt
-question = st.text_input("Message Botify", key="question_input")
+# Step 1: Ask question with a blank input box and custom prompt (as placeholder)
+question = st.text_input("", placeholder="Message Botify", key="question_input")
 
 # Function to handle question submission and API request
 def ask_question(question):
