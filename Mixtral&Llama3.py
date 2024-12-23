@@ -419,3 +419,103 @@ if "history" in st.session_state and st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
+
+# Persistent Question Input Box
+st.markdown("""
+    <div style="
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background-color: #282c34;
+        color: white;
+        padding: 10px;
+        border-radius: 8px;
+        width: 300px;
+        font-size: 14px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        z-index: 1000;">
+        <input id="user_question" type="text" style="width: 100%; padding: 8px; border-radius: 5px;" placeholder="Ask a question..." onkeyup="if(event.keyCode == 13) submitQuestion()">
+    </div>
+    <script>
+        function submitQuestion() {
+            const question = document.getElementById('user_question').value;
+            if(question.trim() !== "") {
+                window.parent.postMessage({ type: 'ask-question', question: question }, '*');
+                document.getElementById('user_question').value = "";
+            }
+        }
+    </script>
+""", unsafe_allow_html=True)
+
+# Listen for user input from the persistent chat box
+if "question" in st.session_state:
+    question = st.session_state["question"]
+    content = st.session_state.get("content", "")
+    selected_model_id = st.session_state.get("selected_model_id", None)
+
+    # Process question if it exists
+    if question and selected_model_id:
+        # Call the backend to get the answer to the question
+        url = f"{base_url}/chat/completions"
+        data = {
+            "model": selected_model_id,
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                {"role": "system", "content": content},
+                {"role": "user", "content": question}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 200,
+            "top_p": 0.9
+        }
+
+        try:
+            response = requests.post(url, headers=headers, json=data)
+            if response.status_code == 200:
+                result = response.json()
+                answer = result['choices'][0]['message']['content']
+
+                # Store the question and answer in the session history
+                malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+                current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
+                interaction = {
+                    "time": current_time,
+                    "input_method": "Chat Box",
+                    "question": question,
+                    "response": answer,
+                    "content_preview": content[:100] if content else "No content available"
+                }
+                st.session_state.history.append(interaction)
+
+                # Display the answer on the page
+                st.write(f"Answer: {answer}")
+
+            else:
+                st.write(f"Error {response.status_code}: {response.text}")
+        except requests.exceptions.RequestException as e:
+            st.write(f"An error occurred: {e}")
+
+        # Clear the question after it's processed
+        del st.session_state['question']
+
+# Function to ask questions at any time
+def ask_question(question):
+    # Store the user's question in the session state for further processing
+    st.session_state["question"] = question
+
+# Trigger to ask a question
+if content and selected_model_id:
+    question = st.text_input("Ask a question about the content:")
+    if question:
+        ask_question(question)
+
+# Sidebar header for the chat history
+if "history" in st.session_state and st.session_state.history:
+    st.sidebar.header("Interaction History")
+    for idx, interaction in enumerate(st.session_state.history):
+        st.sidebar.markdown(f"**{interaction['time']}**")
+        st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")
+        st.sidebar.markdown(f"**Question**: {interaction['question']}")
+        st.sidebar.markdown(f"**Response**: {interaction['response']}")
+        st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
+        st.sidebar.markdown("---")
