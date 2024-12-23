@@ -411,67 +411,11 @@ if st.sidebar.button("Start a New Chat"):
 
 
 
+# Text area input with placeholder "Message Botify"
+question = st.text_area("", placeholder="Message Botify", height=150, key="question_input")
 
-# Custom CSS for the fixed down bar and the text area with the arrow icon
-st.markdown("""
-    <style>
-        /* Create a fixed bottom bar with black background */
-        .bottom-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: #111111;
-            padding: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 999;
-        }
-
-        /* Style the text area with black background and white text */
-        .stTextArea textarea {
-            background-color: #000000; 
-            color: white; 
-            border: 1px solid #444; 
-            border-radius: 10px;
-            padding: 10px;
-            font-size: 16px;
-            height: 150px; /* Fixed height to prevent scrolling */
-            width: 80%; /* Adjust width as needed */
-            resize: none; /* Disable resizing */
-            white-space: nowrap; /* Prevent line breaks */
-            overflow: hidden; /* Prevent scrolling */
-            padding-right: 40px; /* Space for the arrow icon */
-        }
-
-        /* Ensure the button is inside the text area on the right side */
-        .stButton>button {
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        /* Style the button with the white arrow */
-        .stButton>button:after {
-            content: '→';
-            font-size: 24px;
-            color: white;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# Container for the "down bar"
-with st.container():
-    # Ask the question with the text area in the "down bar"
-    question = st.text_area("", placeholder="Message Botify", height=150, key="question_input")
-
-    # Add a "Send" button styled with an arrow
-    send_button = st.button("Send", key="send_button", help="Click to send your message")
+# Add a "Send" button styled with an arrow
+send_button = st.button("Send", key="send_button", help="Click to send your message")
 
 # Function to handle question submission and API request
 def ask_question(question):
