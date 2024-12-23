@@ -361,11 +361,10 @@ if content and selected_model_id:
         # If there's already a response from the model, ask for follow-up questions
         st.write("You can ask more questions or clarify any points.")
 
-
 # Display the interaction history in the sidebar with clickable expanders
 if "history" in st.session_state and st.session_state.history:
     st.sidebar.header("Interaction History")
-    
+
     # Add the "Clear History" button to reset the interaction history
     if st.sidebar.button("Clear History"):
         # Clear the history and content from session state
@@ -404,7 +403,6 @@ if st.sidebar.button("Start a New Chat"):
     st.session_state['audio_transcript'] = ''  # Clear audio transcription text
     st.session_state['response_audio'] = None  # Clear the response audio
     st.rerun()  # Refresh the app to reflect the changes
-
 
 
 # Text area input with placeholder "Message Botify" without extra label
