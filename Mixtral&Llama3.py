@@ -88,6 +88,7 @@ def extract_text_from_pdf(pdf_file):
         extracted_text += page.extract_text()
     return extracted_text
 
+# Updated summarize_text_with_rouge function (no changes here, just included for clarity)
 def summarize_text_with_rouge(text, model_id, reference_summary=None):
     # Start the timer to measure summarization time
     start_time = time.time()
@@ -125,11 +126,13 @@ def summarize_text_with_rouge(text, model_id, reference_summary=None):
                 
                 # Print ROUGE scores
                 st.write(f"ROUGE-1: {rouge1.fmeasure:.4f}, ROUGE-2: {rouge2.fmeasure:.4f}, ROUGE-L: {rougeL.fmeasure:.4f}")
+                
             return generated_summary, summarization_time
         else:
             return f"Error {response.status_code}: {response.text}", 0
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}", 0
+
 
 
 
@@ -258,15 +261,17 @@ if input_method == "Upload PDF":
     else:
         st.error("Please upload a PDF file to proceed.")
 
-    # Summarize the extracted text only when the button is clicked
     if st.button("Summarize Text"):
         st.write("Summarizing the text...")
-        
+    
         # Optional: If you have a reference summary, set it here for ROUGE scoring
         reference_summary = "This is a sample reference summary for ROUGE evaluation."
-    
+        
         # Measure summarization time
         generated_summary, summarization_time = summarize_text_with_rouge(pdf_text, selected_model_id, reference_summary=reference_summary)
+        
+        # Store the generated summary in session state for later use in Q&A
+        st.session_state['generated_summary'] = generated_summary  # Store it in session state
         
         # Display the summary and summarization time
         st.write("Summary:")
@@ -456,7 +461,7 @@ def ask_question(question):
         # Track start time for question response
         start_time = time.time()
 
-        # Prepare the request payload for question
+        # Prepare the request payload for the question
         url = f"{base_url}/chat/completions"
         data = {
             "model": selected_model_id,
@@ -502,6 +507,18 @@ def ask_question(question):
                     # Display the answer along with the response time
                     st.write(f"Answer: {answer}")
                     st.write(f"Question Response Time: {response_time:.2f} seconds")
+
+                    # Compute ROUGE scores for the Q&A after summarization
+                    if 'generated_summary' in st.session_state:
+                        reference_summary = st.session_state['generated_summary']
+                        scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
+                        scores = scorer.score(reference_summary, answer)
+                        rouge1 = scores["rouge1"]
+                        rouge2 = scores["rouge2"]
+                        rougeL = scores["rougeL"]
+
+                        # Display ROUGE scores for the question-answering process
+                        st.write(f"ROUGE-1: {rouge1.fmeasure:.4f}, ROUGE-2: {rouge2.fmeasure:.4f}, ROUGE-L: {rougeL.fmeasure:.4f}")
 
                     # Update content with the latest answer
                     st.session_state['content'] += f"\n{question}: {answer}"
