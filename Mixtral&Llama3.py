@@ -395,24 +395,34 @@ if content and selected_model_id:
         # If there's already a response from the model, ask for follow-up questions
         st.write("You can ask more questions or clarify any points.")
 
+# Display the interaction history in the sidebar with clickable expanders
+if "history" in st.session_state and st.session_state.history:
+    st.sidebar.header("Interaction History")
+    for idx, interaction in enumerate(st.session_state.history):
+        # Create an expander for each interaction item
+        with st.sidebar.expander(f"Interaction {idx+1} - {interaction['time']}"):
+            st.markdown(f"**Question**: {interaction['question']}")
+            st.markdown(f"**Response**: {interaction['response']}")
+            st.markdown(f"**Content Preview**: {interaction['content_preview']}")
+            
+            # Add a button to let the user pick this interaction to continue
+            if st.button(f"Continue with Interaction {idx+1}", key=f"continue_{idx}"):
+                # Load the selected interaction into the current session state for continuation
+                st.session_state['content'] = interaction['response']  # Set the response as current content
+                st.session_state['history'].append(interaction)  # Add it to the session history for context
+                st.session_state['question_input'] = interaction['question']  # Load the last question as the input text
+                st.experimental_rerun()  # Rerun the app to update the chat flow
+
 # Add "Start a New Chat" button to the sidebar
 if st.sidebar.button("Start a New Chat"):
-    # Only clear the current chat-related variables, NOT the history
-    st.session_state['content'] = ''  # Clear the current content
-    st.session_state['uploaded_file'] = None  # Clear any uploaded PDF
-    st.session_state['uploaded_audio'] = None  # Clear any uploaded audio
-    st.session_state['manual_text'] = ''  # Clear any manually entered text
-    st.session_state['uploaded_image'] = None  # Clear any uploaded image
-    st.session_state['selected_model_id'] = None  # Clear model selection
-    st.session_state['selected_language'] = "English"  # Optionally reset the language
-    
-    # Optionally, reset UI components, such as resetting dropdowns or text fields
-    st.rerun()  # Refresh the app to reflect the changes
+    # Reset the content and history for starting fresh
+    st.session_state['content'] = ''
+    st.session_state['history'] = []
+    st.session_state['question_input'] = ''
+    st.experimental_rerun()  # Refresh the app to reflect the changes
 
-
-
-# Text area input with placeholder "Message Botify"
-question = st.text_area("", placeholder="Message Botify", height=150, key="question_input")
+# Display current question and answer inputs for the ongoing chat
+question = st.text_area("Ask a question about the content:", st.session_state.get('question_input', ''), key="question_input")
 
 # Add a "Send" button styled with an arrow
 send_button = st.button("Send", key="send_button", help="Click to send your message")
@@ -426,7 +436,7 @@ def ask_question(question):
             "model": selected_model_id,
             "messages": [
                 {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                {"role": "system", "content": content},
+                {"role": "system", "content": st.session_state['content']},  # Use the current content as context
                 {"role": "user", "content": question}
             ],
             "temperature": 0.7,
@@ -448,7 +458,7 @@ def ask_question(question):
                     "time": current_time,
                     "question": question,
                     "response": answer,
-                    "content_preview": content[:100] if content else "No content available"
+                    "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available"
                 }
                 if "history" not in st.session_state:
                     st.session_state.history = []
@@ -456,6 +466,8 @@ def ask_question(question):
 
                 # Display the answer
                 st.write(f"Answer: {answer}")
+                # Update content with the latest answer
+                st.session_state['content'] += f"\n{question}: {answer}"
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
@@ -464,14 +476,3 @@ def ask_question(question):
 # Ask the question when the "Send" button is pressed
 if send_button:
     ask_question(question)
-
-# Display the interaction history in the sidebar with clickable expanders
-if "history" in st.session_state and st.session_state.history:
-    st.sidebar.header("Interaction History")
-    for idx, interaction in enumerate(st.session_state.history):
-        # Create an expander for each interaction item
-        with st.sidebar.expander(f"Interaction {idx+1} - {interaction['time']}"):
-            st.markdown(f"**Question**: {interaction['question']}")
-            st.markdown(f"**Response**: {interaction['response']}")
-            st.markdown(f"**Content Preview**: {interaction['content_preview']}")
-            st.sidebar.markdown("---")
