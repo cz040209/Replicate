@@ -415,7 +415,6 @@ question = st.text_area("",
 # Add a "Send" button styled with an arrow
 send_button = st.button("Send", key="send_button", help="Click to send your message")
 
-# Function to handle question submission and API request
 def ask_question(question):
     if question and selected_model_id:
         # Prepare the request payload
@@ -442,24 +441,29 @@ def ask_question(question):
                 # Track the interaction history
                 malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
                 current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
-                interaction = {
-                    "time": current_time,
-                    "question": question,
-                    "response": answer,
-                    "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available"
-                }
-                if "history" not in st.session_state:
-                    st.session_state.history = []
-                st.session_state.history.append(interaction)  # Add a new entry only when the user sends a new question
 
-                # Display the answer
-                st.write(f"Answer: {answer}")
-                # Update content with the latest answer
-                st.session_state['content'] += f"\n{question}: {answer}"
+                # Only store interactions with a valid question and response
+                if answer and question:
+                    interaction = {
+                        "time": current_time,
+                        "question": question,
+                        "response": answer,
+                        "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available"
+                    }
+                    if "history" not in st.session_state:
+                        st.session_state.history = []
+                    st.session_state.history.append(interaction)  # Add a new entry only when there's a valid response
+
+                    # Display the answer
+                    st.write(f"Answer: {answer}")
+                    # Update content with the latest answer
+                    st.session_state['content'] += f"\n{question}: {answer}"
+
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
+
 
 # Ask the question when the "Send" button is pressed
 if send_button:
