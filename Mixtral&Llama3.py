@@ -257,6 +257,8 @@ if input_method == "Upload PDF":
     # Summarize the extracted text only when the button is clicked
     if st.button("Summarize Text"):
         st.write("Summarizing the text...")
+
+        # Generate summary of extracted text
         summary = summarize_text(pdf_text, selected_model_id)
         st.write("Summary:")
         st.write(summary)
@@ -268,7 +270,7 @@ if input_method == "Upload PDF":
         st.write(f"Translated Summary in {selected_language}:")
         st.write(translated_summary)
 
-        # Convert summary to audio in English (not translated)
+        # Convert summary to audio (TTS) in English (for the summarized content)
         tts = gTTS(text=summary, lang='en')  # Use English summary for audio
         tts.save("response.mp3")
         st.audio("response.mp3", format="audio/mp3")
@@ -284,6 +286,8 @@ elif input_method == "Enter Text Manually":
 
         if st.button("Summarize Text"):
             st.write("Summarizing the entered text...")
+
+            # Generate summary of the entered text
             summary = summarize_text(manual_text, selected_model_id)
             st.write("Summary:")
             st.write(summary)
@@ -293,7 +297,7 @@ elif input_method == "Enter Text Manually":
             st.write(f"Translated Summary in {selected_language}:")
             st.write(translated_summary)
 
-            # Convert summary to audio in English (not translated)
+            # Convert summary to audio (TTS) in English (for the summarized content)
             tts = gTTS(text=summary, lang='en')  # Use English summary for audio
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
