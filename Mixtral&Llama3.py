@@ -87,6 +87,9 @@ def extract_text_from_pdf(pdf_file):
 
 # Function to Summarize the Text
 def summarize_text(text, model_id):
+    # Start the timer to measure summarization time
+    start_time = time.time()
+    
     url = f"{base_url}/chat/completions"
     data = {
         "model": model_id,
@@ -101,13 +104,20 @@ def summarize_text(text, model_id):
 
     try:
         response = requests.post(url, headers=headers, json=data)
+        
+        # End the timer and calculate the summarization time
+        end_time = time.time()
+        summarization_time = end_time - start_time
+        
         if response.status_code == 200:
             result = response.json()
-            return result['choices'][0]['message']['content']
+            summary = result['choices'][0]['message']['content']
+            return summary, summarization_time  # Return summary and summarization time
         else:
-            return f"Error {response.status_code}: {response.text}"
+            return f"Error {response.status_code}: {response.text}", summarization_time
     except requests.exceptions.RequestException as e:
-        return f"An error occurred: {e}"
+        return f"An error occurred: {e}", 0
+
 
 # Function to Translate Text Using the Selected Model
 def translate_text(text, target_language, model_id):
@@ -221,7 +231,7 @@ languages = [
 ]
 selected_language = st.selectbox("Choose your preferred language for output", languages)
 
-# Step 1: Handle PDF Upload
+# Step 1: Handle PDF Upload and Summarization
 if input_method == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
     
@@ -237,10 +247,15 @@ if input_method == "Upload PDF":
     # Summarize the extracted text only when the button is clicked
     if st.button("Summarize Text"):
         st.write("Summarizing the text...")
-        summary = summarize_text(pdf_text, selected_model_id)
+        
+        # Measure summarization time
+        summary, summarization_time = summarize_text(pdf_text, selected_model_id)
+        
+        # Display the summary and summarization time
         st.write("Summary:")
         st.write(summary)
-        
+        st.write(f"Summarization Time: {summarization_time:.2f} seconds")
+
         # Convert summary to audio in English (not translated)
         tts = gTTS(text=summary, lang='en')  # Use English summary for audio
         tts.save("response.mp3")
@@ -310,6 +325,7 @@ if content and selected_model_id:
         question = st.text_input("Ask a question about the content:")
 
         if question:
+            ask_question(question)
             # Set the timezone to Malaysia for the timestamp
             malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
             current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
@@ -418,9 +434,13 @@ question = st.text_area("",
 # Add a "Send" button styled with an arrow
 send_button = st.button("Send", key="send_button", help="Click to send your message")
 
+# Function to ask a question about the content
 def ask_question(question):
     if question and selected_model_id:
-        # Prepare the request payload
+        # Track start time for question response
+        start_time = time.time()
+
+        # Prepare the request payload for question
         url = f"{base_url}/chat/completions"
         data = {
             "model": selected_model_id,
@@ -437,6 +457,11 @@ def ask_question(question):
         try:
             # Send request to the API
             response = requests.post(url, headers=headers, json=data)
+            
+            # Track end time for question response
+            end_time = time.time()
+            response_time = end_time - start_time
+
             if response.status_code == 200:
                 result = response.json()
                 answer = result['choices'][0]['message']['content']
@@ -451,14 +476,17 @@ def ask_question(question):
                         "time": current_time,
                         "question": question,
                         "response": answer,
-                        "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available"
+                        "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available",
+                        "response_time": f"{response_time:.2f} seconds"  # Store the response time
                     }
                     if "history" not in st.session_state:
                         st.session_state.history = []
                     st.session_state.history.append(interaction)  # Add a new entry only when there's a valid response
 
-                    # Display the answer
+                    # Display the answer along with the response time
                     st.write(f"Answer: {answer}")
+                    st.write(f"Question Response Time: {response_time:.2f} seconds")
+
                     # Update content with the latest answer
                     st.session_state['content'] += f"\n{question}: {answer}"
 
