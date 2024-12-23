@@ -410,14 +410,45 @@ if st.sidebar.button("Start a New Chat"):
     st.rerun()  # Refresh the app to reflect the changes
 
 
+
 # Initialize content variable for any previous input (e.g., extracted text or user input)
 content = st.session_state.get("content", "")
 
-# Create the text area input with a placeholder
-question = st.text_area("", placeholder="Message Botify", height=150, key="question_input")
-
-# Display a "Send" icon button
-send_icon = st.button("✉️", key="send_button", help="Click to send your message", use_container_width=False)
+# Create a custom container with a text area and an icon inside
+st.markdown("""
+    <style>
+        .input-container {
+            position: relative;
+            width: 100%;
+        }
+        .input-container textarea {
+            width: 100%;
+            height: 150px;
+            padding-right: 35px; /* Add space on the right for the icon */
+            box-sizing: border-box;
+        }
+        .send-icon {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            color: #007bff;
+        }
+    </style>
+    <div class="input-container">
+        <textarea id="question_input" placeholder="Message Botify" class="css-1bp68v4"></textarea>
+        <span class="send-icon" onclick="sendMessage()">✉️</span>
+    </div>
+    <script>
+        function sendMessage() {
+            const question = document.getElementById('question_input').value;
+            if (question.trim()) {
+                window.parent.postMessage({question: question}, "*");
+            }
+        }
+    </script>
+""", unsafe_allow_html=True)
 
 # Function to handle question submission and API request
 def ask_question(question):
@@ -464,7 +495,8 @@ def ask_question(question):
             st.write(f"An error occurred: {e}")
 
 # Ask the question when the "Send" icon is pressed
-if send_icon:
+if 'question_input' in st.session_state:
+    question = st.session_state.question_input  # Retrieve the value of the text area
     ask_question(question)
 
 # Display the interaction history in the sidebar
