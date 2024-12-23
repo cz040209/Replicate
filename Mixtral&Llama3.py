@@ -232,6 +232,20 @@ languages = [
 ]
 selected_language = st.selectbox("Choose your preferred language for output", languages)
 
+# Initialize content and summary variables in the session state
+if "content" not in st.session_state:
+    st.session_state["content"] = ""
+if "summarized_content" not in st.session_state:
+    st.session_state["summarized_content"] = ""
+
+# After extracting text from the PDF, store it in content
+if uploaded_file:
+    # Extract text from the uploaded PDF
+    st.write("Extracting text from the uploaded PDF...")
+    pdf_text = extract_text_from_pdf(uploaded_file)
+    st.success("Text extracted successfully!")
+    st.session_state["content"] = pdf_text  # Store the original content
+
 # Step 1: Handle PDF Upload and Summarization
 if input_method == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
@@ -245,25 +259,29 @@ if input_method == "Upload PDF":
     else:
         st.error("Please upload a PDF file to proceed.")
 
-    # Summarize the extracted text only when the button is clicked
+   
+    # When the "Summarize Text" button is pressed
     if st.button("Summarize Text"):
         st.write("Summarizing the text...")
         
         # Measure summarization time
-        summary, summarization_time = summarize_text(pdf_text, selected_model_id)
+        summary, summarization_time = summarize_text(st.session_state["content"], selected_model_id)
+        
+        # Store the summarized content in session state separately
+        st.session_state["summarized_content"] = summary
         
         # Display the summary and summarization time
         st.write("Summary:")
         st.write(summary)
         st.write(f"Summarization Time: {summarization_time:.2f} seconds")
-
+    
         # Convert summary to audio in English (not translated)
         tts = gTTS(text=summary, lang='en')  # Use English summary for audio
         tts.save("response.mp3")
         st.audio("response.mp3", format="audio/mp3")
-
+    
         st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
-
+    
         # Translate the summary to the selected language
         translated_summary = translate_text(summary, selected_language, selected_model_id)
         st.write(f"Translated Summary in {selected_language}:")
@@ -320,7 +338,7 @@ elif input_method == "Upload Audio":
 if content:
     translated_content = translate_text(content, selected_language, selected_model_id)
 
-# Step 5: Allow user to ask questions about the content (if any)
+# When asking a question about the content
 if content and selected_model_id:
     if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
         question = st.text_input("Ask a question about the content:")
@@ -336,19 +354,19 @@ if content and selected_model_id:
                 "input_method": input_method,
                 "question": question,
                 "response": "",
-                "content_preview": content[:100] if content else "No content available"
+                "content_preview": st.session_state["summarized_content"][:100] if st.session_state["summarized_content"] else st.session_state["content"][:100]
             }
 
             # Add the user question to the history
             st.session_state.history.append(interaction)
 
-            # Send the question along with the content to the selected model API for the response
+            # Send the question along with the summarized or original content to the selected model API for the response
             url = f"{base_url}/chat/completions"
             data = {
                 "model": selected_model_id,
                 "messages": [
                     {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                    {"role": "system", "content": content},
+                    {"role": "system", "content": st.session_state["summarized_content"] if st.session_state["summarized_content"] else st.session_state["content"]},
                     {"role": "user", "content": question}
                 ],
                 "temperature": 0.7,
