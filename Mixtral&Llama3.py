@@ -346,17 +346,10 @@ if content:
 
 # Step 5: Allow user to ask questions about the content (if any)
 if content and selected_model_id:
-    # Add a "Start New Chat" button to reset the session state
-    if st.button("Start New Chat"):
-        # Clear the session state variables related to the content and history
-        st.session_state['history'] = []  # Clear the interaction history
-        st.session_state['content'] = ''  # Clear the content
-        st.session_state['question_input'] = ''  # Clear the question input
-        st.experimental_rerun()  # Refresh the app to apply the reset
-
     # Check if there is content and a model selected, then allow the user to ask questions
     if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
-        question = st.text_input("Ask a question about the content:", key="question_input")
+        # Ensure that the key for question input is unique
+        question = st.text_input("Ask a question about the content:")
 
         if question:
             # Set the timezone to Malaysia for the timestamp
@@ -429,9 +422,18 @@ if content and selected_model_id:
                     st.write(f"Error {response.status_code}: {response.text}")
             except requests.exceptions.RequestException as e:
                 st.write(f"An error occurred: {e}")
+
     else:
         # If there's already a response from the model, ask for follow-up questions
         st.write("You can ask more questions or clarify any points.")
+    
+    # Start New Chat button, placed below the question input
+    if st.button("Start New Chat"):
+        # Clear the session state variables related to the content and history
+        st.session_state['history'] = []  # Clear the interaction history
+        st.session_state['content'] = ''  # Clear the content
+        st.session_state['question_input'] = ''  # Clear the question input
+        st.experimental_rerun()  # Refresh the app to apply the reset
         
 
 # Display the interaction history in the sidebar with clickable expanders
