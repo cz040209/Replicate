@@ -344,11 +344,19 @@ if content:
     translated_content = translate_text(content, selected_language, selected_model_id)
 
 
-
 # Step 5: Allow user to ask questions about the content (if any)
 if content and selected_model_id:
+    # Add a "Start New Chat" button to reset the session state
+    if st.button("Start New Chat"):
+        # Clear the session state variables related to the content and history
+        st.session_state['history'] = []  # Clear the interaction history
+        st.session_state['content'] = ''  # Clear the content
+        st.session_state['question_input'] = ''  # Clear the question input
+        st.experimental_rerun()  # Refresh the app to apply the reset
+
+    # Check if there is content and a model selected, then allow the user to ask questions
     if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
-        question = st.text_input("Ask a question about the content:")
+        question = st.text_input("Ask a question about the content:", key="question_input")
 
         if question:
             # Set the timezone to Malaysia for the timestamp
@@ -545,24 +553,3 @@ def ask_question(question):
 if send_button:
     ask_question(question)
 
-
-# Add a "Start New Chat" button to the sidebar or main area
-if st.sidebar.button("Start New Chat"):
-    # Clear all relevant session state data
-    st.session_state['history'] = []  # Clear interaction history
-    st.session_state['content'] = ''  # Clear content
-    st.session_state['pdf_text'] = ''  # Clear PDF text
-    st.session_state['generated_summary'] = ''  # Clear generated summary
-    st.session_state['question_input'] = ''  # Clear the last input question
-    st.session_state['question'] = ''  # Clear the question input
-    st.session_state['uploaded_file'] = None  # Clear uploaded file
-    st.session_state['uploaded_image'] = None  # Clear uploaded image
-    st.session_state['uploaded_audio'] = None  # Clear uploaded audio
-    st.session_state['input_method'] = ''  # Clear selected input method
-    st.session_state['selected_model_id'] = None  # Clear selected model
-
-    # Optionally, reset any other session variables that might be relevant
-    st.sidebar.success("New chat started!")
-    
-    # Rerun the app to refresh the state
-    st.rerun()
