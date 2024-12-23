@@ -389,11 +389,25 @@ if content and selected_model_id:
                     # Display the model's response
                     st.write(f"Answer: {answer}")
 
+                    # Now calculate ROUGE scores between the answer and the content (or summary)
+                    if 'generated_summary' in st.session_state:
+                        reference_summary = st.session_state['generated_summary']  # The content summary
+                        
+                        # Calculate ROUGE scores
+                        scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
+                        scores = scorer.score(reference_summary, answer)
+                        rouge1 = scores["rouge1"]
+                        rouge2 = scores["rouge2"]
+                        rougeL = scores["rougeL"]
+                        
+                        # Display ROUGE scores
+                        st.write(f"ROUGE-1: {rouge1.fmeasure:.4f}, ROUGE-2: {rouge2.fmeasure:.4f}, ROUGE-L: {rougeL.fmeasure:.4f}")
+
                 else:
                     st.write(f"Error {response.status_code}: {response.text}")
             except requests.exceptions.RequestException as e:
                 st.write(f"An error occurred: {e}")
-        
+
     else:
         # If there's already a response from the model, ask for follow-up questions
         st.write("You can ask more questions or clarify any points.")
