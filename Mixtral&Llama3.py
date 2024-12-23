@@ -421,8 +421,10 @@ if "history" in st.session_state and st.session_state.history:
             if st.button(f"Continue with Interaction {idx+1}", key=f"continue_{idx}"):
                 # Load the selected interaction into the current session state for continuation
                 st.session_state['content'] = interaction['response']  # Set the response as current content
-                st.session_state['history'].append(interaction)  # Add it to the session history for context
                 st.session_state['question_input'] = interaction['question']  # Load the last question as the input text
+                
+                # Do not add a new history entry; just continue from the last response
+                st.session_state['history'] = st.session_state['history'][:idx+1]  # Keep the history up to the selected interaction
                 st.rerun()  # Rerun the app to update the chat flow
 
 # Add "Start a New Chat" button to the sidebar
@@ -478,7 +480,7 @@ def ask_question(question):
                 }
                 if "history" not in st.session_state:
                     st.session_state.history = []
-                st.session_state.history.append(interaction)
+                st.session_state.history.append(interaction)  # Add a new entry only when the user sends a new question
 
                 # Display the answer
                 st.write(f"Answer: {answer}")
