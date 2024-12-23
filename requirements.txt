@@ -11,4 +11,5 @@ transformers
 gTTS
 numpy
 openai
+google-generativeai
 
