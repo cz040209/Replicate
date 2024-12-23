@@ -221,53 +221,40 @@ languages = [
 ]
 selected_language = st.selectbox("Choose your preferred language for output", languages)
 
-# Initialize a flag for summarization
-if "is_summarized" not in st.session_state:
-    st.session_state["is_summarized"] = False
-
 # Step 1: Handle PDF Upload
 if input_method == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
-
+    
     if uploaded_file:
         # Extract text from the uploaded PDF
         st.write("Extracting text from the uploaded PDF...")
         pdf_text = extract_text_from_pdf(uploaded_file)
         st.success("Text extracted successfully!")
-
+    
         # Assign extracted text to content for chat (but do not show the extracted text)
         content = pdf_text
 
-        # Enable the "Summarize Text" button once a PDF is uploaded
-        if st.button("Summarize Text"):
-            st.write("Summarizing the text...")
-            summary = summarize_text(pdf_text, selected_model_id)
-            st.write("Summary:")
-            st.write(summary)
-
-            # Convert summary to audio in English (not translated) after the summary is displayed
-            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
-            tts.save("response.mp3")
-            st.audio("response.mp3", format="audio/mp3")
-
-            st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
-
-            # Translate the summary to the selected language
-            translated_summary = translate_text(summary, selected_language, selected_model_id)
-            st.write(f"Translated Summary in {selected_language}:")
-            st.write(translated_summary)
-
-            # Mark as summarized
-            st.session_state["is_summarized"] = True
-
-        else:
-            st.session_state["is_summarized"] = False
     else:
         st.error("Please upload a PDF file to proceed.")
-    
-    # Ensure that the "Send" button is only enabled after the summary is done
-    send_button = st.button("Send", key="send_button", help="Click to send your message", disabled=not st.session_state["is_summarized"])
 
+    # Summarize the extracted text only when the button is clicked
+    if st.button("Summarize Text"):
+        st.write("Summarizing the text...")
+        summary = summarize_text(pdf_text, selected_model_id)
+        st.write("Summary:")
+        st.write(summary)
+    
+        # Convert summary to audio in English (not translated) after the summary is displayed
+        tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+        tts.save("response.mp3")
+        st.audio("response.mp3", format="audio/mp3")
+    
+        st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
+    
+        # Translate the summary to the selected language
+        translated_summary = translate_text(summary, selected_language, selected_model_id)
+        st.write(f"Translated Summary in {selected_language}:")
+        st.write(translated_summary)
 
 
 # Step 3: Handle Image Upload
