@@ -414,10 +414,6 @@ if st.sidebar.button("Start a New Chat"):
 # Initialize content variable for any previous input (e.g., extracted text or user input)
 content = st.session_state.get("content", "")
 
-# Model selection dropdown
-selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
-selected_model_id = available_models.get(selected_model_name)
-
 # Create a custom container with a text area and a triangle arrow icon inside
 st.markdown("""
     <style>
