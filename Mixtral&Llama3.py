@@ -406,7 +406,7 @@ if st.sidebar.button("Start a New Chat"):
 
 # Text area input with placeholder "Message Botify" without extra label
 question = st.text_area("", 
-                        st.session_state.get('question_input', ''),  # Preserve input in session state
+                        st.session_state.get('question_input', ''),  # Use session state for preserving input
                         key="question_input", 
                         placeholder="Message Botify",  # Placeholder text
                         height=150)  # Adjust the height as needed
@@ -414,6 +414,7 @@ question = st.text_area("",
 # Add a "Send" button styled with an arrow
 send_button = st.button("Send", key="send_button", help="Click to send your message")
 
+# Function to handle question submission and API request
 def ask_question(question):
     if question and selected_model_id:
         # Prepare the request payload
@@ -437,50 +438,28 @@ def ask_question(question):
                 result = response.json()
                 answer = result['choices'][0]['message']['content']
 
-                # Ensure the response is valid before appending to history
-                if answer:
-                    # Track the interaction history
-                    malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
-                    current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
-                    interaction = {
-                        "time": current_time,
-                        "question": question,
-                        "response": answer,
-                        "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available"
-                    }
-                    if "history" not in st.session_state:
-                        st.session_state.history = []
-                    st.session_state.history.append(interaction)  # Add a new entry when a new message is sent
+                # Track the interaction history
+                malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+                current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
+                interaction = {
+                    "time": current_time,
+                    "question": question,
+                    "response": answer,
+                    "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available"
+                }
+                if "history" not in st.session_state:
+                    st.session_state.history = []
+                st.session_state.history.append(interaction)  # Add a new entry only when the user sends a new question
 
-                    # Display the answer
-                    st.write(f"Answer: {answer}")
-                    # Update content with the latest answer
-                    st.session_state['content'] += f"\n{question}: {answer}"
-                else:
-                    st.error("No valid response received from the model.")
+                # Display the answer
+                st.write(f"Answer: {answer}")
+                # Update content with the latest answer
+                st.session_state['content'] += f"\n{question}: {answer}"
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
-
-# Display the chat conversation dynamically
-st.write("### Chat Conversation")
-for msg in st.session_state.history:
-    if isinstance(msg, dict) and "role" in msg and "content" in msg:
-        if msg["role"] == "user":
-            st.markdown(f"\U0001F9D1 **User**: {msg['question']}")
-            st.markdown(f"\U0001F9D1 **User's Message**: {msg['response']}")
-        elif msg["role"] == "assistant":
-            st.markdown(f"\U0001F916 **Botify**: {msg['response']}")
-    else:
-        st.error("Error: A message is missing or malformed in the chat history.")
-
-
-# Add a "Send" button styled with an arrow
-send_button = st.button("Send", key="send_button", help="Click to send your message")
-
-# Call the function to ask the question and update chat history
+# Ask the question when the "Send" button is pressed
 if send_button:
     ask_question(question)
-
