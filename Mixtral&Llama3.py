@@ -230,12 +230,6 @@ if input_method == "Upload PDF":
         st.write("Extracting text from the uploaded PDF...")
         pdf_text = extract_text_from_pdf(uploaded_file)
         st.success("Text extracted successfully!")
-    
-        # Display extracted text with adjusted font size
-        with st.expander("View Extracted Text"):
-            st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
-    
-        # Assign extracted text to content for chat
         content = pdf_text
     else:
         st.error("Please upload a PDF file to proceed.")
