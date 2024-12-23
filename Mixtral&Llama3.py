@@ -395,16 +395,28 @@ if content and selected_model_id:
         # If there's already a response from the model, ask for follow-up questions
         st.write("You can ask more questions or clarify any points.")
 
+
+
 # Display the interaction history in the sidebar with clickable expanders
 if "history" in st.session_state and st.session_state.history:
     st.sidebar.header("Interaction History")
+    
+    # Add the "Clear History" button to reset the interaction history
+    if st.sidebar.button("Clear History"):
+        # Clear the history and content from session state
+        st.session_state['history'] = []
+        st.session_state['content'] = ''
+        st.session_state['question_input'] = ''
+        st.sidebar.success("History has been cleared!")
+        st.rerun()  # Refresh the app to reflect the changes
+
+    # Display the history with expanders
     for idx, interaction in enumerate(st.session_state.history):
-        # Create an expander for each interaction item
         with st.sidebar.expander(f"Interaction {idx+1} - {interaction['time']}"):
             st.markdown(f"**Question**: {interaction['question']}")
             st.markdown(f"**Response**: {interaction['response']}")
             st.markdown(f"**Content Preview**: {interaction['content_preview']}")
-            
+
             # Add a button to let the user pick this interaction to continue
             if st.button(f"Continue with Interaction {idx+1}", key=f"continue_{idx}"):
                 # Load the selected interaction into the current session state for continuation
