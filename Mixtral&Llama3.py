@@ -359,7 +359,6 @@ question = st.text_area("",
 # Add a "Send" button styled with an arrow
 send_button = st.button("Send", key="send_button", help="Click to send your message")
 
-# Function to handle question submission and API request
 def ask_question(question):
     if question:
         # Check if there is content from a previous PDF, image, or audio file upload
@@ -368,7 +367,6 @@ def ask_question(question):
             return  # Do not proceed if there's no content
 
         # Prepare the request payload for the model
-        url = f"{base_url}/chat/completions"
         data = {
             "model": selected_model_id,
             "messages": [
@@ -383,7 +381,7 @@ def ask_question(question):
 
         try:
             # Send request to the API
-            response = requests.post(url, headers=headers, json=data)
+            response = requests.post(f"{base_url}/chat/completions", headers=headers, json=data)
             if response.status_code == 200:
                 result = response.json()
                 answer = result['choices'][0]['message']['content']
@@ -403,12 +401,13 @@ def ask_question(question):
 
                 # Display the answer
                 st.write(f"Answer: {answer}")
-                # Update content with the latest answer (optional, if you want to keep track of the Q&A flow)
+                # Optionally, update content with the latest answer
                 st.session_state['content'] += f"\n{question}: {answer}"
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
+
             
 # Ask the question when the "Send" button is pressed
 if send_button:
