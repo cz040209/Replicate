@@ -381,6 +381,11 @@ if "content" not in st.session_state:
 if "question_input" not in st.session_state:
     st.session_state.question_input = ""
 
+# Example API and model configuration
+base_url = "https://your-api-url.com"
+selected_model_id = "your-model-id"
+headers = {"Authorization": "Bearer YOUR_API_KEY"}
+
 # Function to handle question submission and API request
 def ask_question(question):
     if question and selected_model_id:
@@ -435,7 +440,10 @@ def ask_question(question):
             st.write(f"An error occurred: {e}")
 
 # Ask the question when the "Send" button is pressed
+send_button = st.button("Send", key="send_button", help="Click to send your message")
+
 if send_button:
+    question = st.session_state.get('question_input', '')
     ask_question(question)
 
 # Display the interaction history in the sidebar with clickable expanders
@@ -481,6 +489,3 @@ question = st.text_area("",
                         key="question_input", 
                         placeholder="Message Botify",  # Placeholder text
                         height=150)  # Adjust the height as needed
-
-# Add a "Send" button styled with an arrow
-send_button = st.button("Send", key="send_button", help="Click to send your message")
