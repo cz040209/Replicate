@@ -403,7 +403,6 @@ if st.sidebar.button("Start a New Chat"):
     st.session_state['pdf_text'] = ''  # Clear the PDF text extraction
     st.session_state['audio_transcript'] = ''  # Clear audio transcription text
     st.session_state['response_audio'] = None  # Clear the response audio
-    st.session_state['history'] = []  # Clear the interaction history
     st.session_state['question_input'] = ''  # Clear the last question input
     st.rerun()  # Refresh the app to reflect the changes
 
