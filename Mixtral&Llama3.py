@@ -441,7 +441,7 @@ def ask_question(question):
         # Track start time for question response
         start_time = time.time()
 
-        # Prepare the request payload for the question
+        # Prepare the request payload for question
         url = f"{base_url}/chat/completions"
         data = {
             "model": selected_model_id,
@@ -458,7 +458,7 @@ def ask_question(question):
         try:
             # Send request to the API
             response = requests.post(url, headers=headers, json=data)
-
+            
             # Track end time for question response
             end_time = time.time()
             response_time = end_time - start_time
@@ -499,12 +499,4 @@ def ask_question(question):
 
 # Ask the question when the "Send" button is pressed
 if send_button:
-    # Debugging check: print values of 'question' and 'selected_model_id'
-    st.write(f"Debug - Question: {question}")
-    st.write(f"Debug - Model ID: {selected_model_id}")
-
-    # Ensure that the 'question' and 'selected_model_id' are valid before calling 'ask_question'
-    if question and selected_model_id:
-        ask_question(question)
-    else:
-        st.error("Please ensure that a valid question and model have been selected before sending.")
+    ask_question(question)
