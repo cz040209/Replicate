@@ -14,7 +14,7 @@ import openai
 import pytz
 from datasets import load_dataset
 
-dataset = load_dataset("squad")
+dataset = load_dataset("squad", version="2.0")
 
 # Load the tokenizer for Llama-3 (assuming it's a variant of Llama)
 tokenizer = LlamaTokenizer.from_pretrained('facebook/llama-3.1-8b')
