@@ -312,9 +312,9 @@ elif input_method == "Upload Image":
 
         # Send image data to the Gemini model for captioning
         try:
-            # Call the Gemini API to extract text from the image
-            response = genai.generate_text_from_image(
-                model="gemini-1.5-flash-8b",
+            # Placeholder for the correct Gemini API method (example: 'text_from_image' is a placeholder)
+            response = genai.text_from_image(
+                model="gemini-1.5-flash-8b",  # Specify the correct model if required
                 image=img_byte_arr
             )
             
@@ -342,6 +342,7 @@ elif input_method == "Upload Image":
         # Select a model for translation and Q&A
         selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
         selected_model_id = available_models.get(selected_model_name)
+
 
 # Step 4: Handle Audio Upload
 elif input_method == "Upload Audio":
