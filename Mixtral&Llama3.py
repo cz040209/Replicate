@@ -265,18 +265,17 @@ elif input_method == "Upload Image":
             image_text = extract_text_from_image(uploaded_image)
             st.success("Text extracted successfully!")
 
-            # Display extracted text with adjusted font size
-            with st.expander("View Extracted Text"):
-                st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
+            # Directly display the extracted text
+            st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
 
-            content = image_text
+            content = image_text  # Set the extracted text as content for further processing
         except Exception as e:
             st.error(f"Error extracting text from image: {e}")
 
-        # Select a model for translation and Q&A
+        # Model selection for translation and Q&A
         selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
         selected_model_id = available_models.get(selected_model_name)
-
+        
 # Step 4: Handle Audio Upload
 elif input_method == "Upload Audio":
     uploaded_audio = st.file_uploader("Upload an audio file", type=["mp3", "wav"])
