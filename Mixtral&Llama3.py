@@ -373,13 +373,20 @@ if content and selected_model_id:
 
 
 
+# Initialize session state if not already done
+if "history" not in st.session_state:
+    st.session_state.history = []
+if "content" not in st.session_state:
+    st.session_state.content = ""
+if "question_input" not in st.session_state:
+    st.session_state.question_input = ""
+
 # Display the interaction history in the sidebar with clickable expanders
 if "history" in st.session_state and st.session_state.history:
     st.sidebar.header("Interaction History")
-    
+
     # Add the "Clear History" button to reset the interaction history
     if st.sidebar.button("Clear History"):
-        # Clear the history and content from session state
         st.session_state['history'] = []
         st.session_state['content'] = ''
         st.session_state['question_input'] = ''
@@ -424,7 +431,7 @@ send_button = st.button("Send", key="send_button", help="Click to send your mess
 # Function to handle question submission and API request
 def ask_question(question):
     if question and selected_model_id:
-        # Prepare the request payload
+        # Prepare the request payload, including all previous interactions for context
         url = f"{base_url}/chat/completions"
         data = {
             "model": selected_model_id,
@@ -454,14 +461,13 @@ def ask_question(question):
                     "response": answer,
                     "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available"
                 }
-                if "history" not in st.session_state:
-                    st.session_state.history = []
                 st.session_state.history.append(interaction)  # Add a new entry only when the user sends a new question
 
                 # Display the answer
                 st.write(f"Answer: {answer}")
                 # Update content with the latest answer
                 st.session_state['content'] += f"\n{question}: {answer}"
+                st.session_state['question_input'] = ""  # Clear input after sending the question
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
