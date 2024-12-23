@@ -411,6 +411,50 @@ if st.sidebar.button("Start a New Chat"):
 
 
 
+# Custom CSS for styling the input area and arrow button
+st.markdown("""
+    <style>
+        /* Style the text area with a black background and white text */
+        .stTextArea textarea {
+            background-color: #000000; 
+            color: white; 
+            border: 1px solid #444; 
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 16px;
+            height: 150px; /* Fixed height to prevent scrolling */
+            overflow: hidden; /* Prevent scrolling */
+            resize: none; /* Disable resizing */
+            white-space: nowrap; /* Prevent line breaks */
+        }
+
+        /* Style the Send button (arrow icon) */
+        .stButton>button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Style the button with the white arrow */
+        .stButton>button:after {
+            content: '→';
+            font-size: 24px;
+            color: white;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Ensure the Send button is inside the text area */
+        .stTextArea {
+            position: relative;
+            padding-right: 40px;  /* Space for the button */
+            overflow: hidden;  /* Prevent overflow */
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # Text area input with placeholder "Message Botify"
 question = st.text_area("", placeholder="Message Botify", height=150, key="question_input")
 
