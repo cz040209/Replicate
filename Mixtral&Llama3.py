@@ -411,7 +411,7 @@ if "history" in st.session_state and st.session_state.history:
                 st.session_state['content'] = interaction['response']  # Set the response as current content
                 st.session_state['history'].append(interaction)  # Add it to the session history for context
                 st.session_state['question_input'] = interaction['question']  # Load the last question as the input text
-                st.experimental_rerun()  # Rerun the app to update the chat flow
+                st.rerun()  # Rerun the app to update the chat flow
 
 # Add "Start a New Chat" button to the sidebar
 if st.sidebar.button("Start a New Chat"):
@@ -419,7 +419,7 @@ if st.sidebar.button("Start a New Chat"):
     st.session_state['content'] = ''
     st.session_state['history'] = []
     st.session_state['question_input'] = ''
-    st.experimental_rerun()  # Refresh the app to reflect the changes
+    st.rerun()  # Refresh the app to reflect the changes
 
 # Text area input with placeholder "Message Botify" without extra label
 question = st.text_area("", 
