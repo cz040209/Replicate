@@ -414,8 +414,8 @@ if st.sidebar.button("Start a New Chat"):
 # Initialize content variable for any previous input (e.g., extracted text or user input)
 content = st.session_state.get("content", "")
 
-# Step 1: Ask question with a blank input box
-question = st.text_input("Ask a question about the content:")
+# Step 1: Ask question with a blank input box and unique key
+question = st.text_input("Ask a question about the content:", key="question_input")
 
 # Function to handle question submission and API request
 def ask_question(question):
