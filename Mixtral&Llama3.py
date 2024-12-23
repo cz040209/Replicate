@@ -434,11 +434,67 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Text area input with placeholder "Message Botify"
-question = st.text_area("", placeholder="Message Botify", height=150, key="question_input")
+# Initialize content variable for any previous input (e.g., extracted text or user input)
+content = st.session_state.get("content", "")
 
-# Add a "Send" button styled as an icon
-send_button = st.button("Send", key="send_button", help="Click to send your message")
+# Model selection dropdown
+selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
+selected_model_id = available_models.get(selected_model_name)
+
+# Step 1: Create the text area for input
+st.markdown("""
+    <style>
+        /* Styling for the container that holds the text input and send button */
+        .input-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        /* Styling for the text area */
+        .message-box {
+            width: 85%;
+            height: 150px;
+            padding: 10px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+        /* Styling for the send button */
+        .send-button {
+            background-color: #61dafb;
+            color: white;
+            border-radius: 50%;
+            padding: 15px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            margin-left: 10px;
+        }
+        .send-button:hover {
+            background-color: #4fa3e4;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# HTML structure for the input box and send button
+st.markdown("""
+    <div class="input-container">
+        <textarea class="message-box" id="question_input" placeholder="Message Botify" rows="4"></textarea>
+        <button class="send-button" onclick="sendQuestion()">Send</button>
+    </div>
+    <script>
+        function sendQuestion() {
+            // Call Python function to process the question
+            const question = document.getElementById("question_input").value;
+            if (question) {
+                // Call Streamlit API to process the question with the model
+                Streamlit.setComponentValue(question);
+            }
+        }
+    </script>
+""", unsafe_allow_html=True)
 
 # Function to handle question submission and API request
 def ask_question(question):
@@ -484,8 +540,11 @@ def ask_question(question):
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
-# Ask the question when the "Send" button is pressed
-if send_button:
+# Call ask_question when the user submits the question
+question = st.session_state.get("question", "")
+
+# Handle when "Send" button is pressed
+if question:
     ask_question(question)
 
 # Display the interaction history in the sidebar
