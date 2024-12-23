@@ -361,26 +361,25 @@ send_button = st.button("Send", key="send_button", help="Click to send your mess
 
 def ask_question(question):
     if question:
-        # Check if there is content from a previous PDF, image, or audio file upload
+        # Ensure that content is correctly set in session_state
         if 'content' not in st.session_state or not st.session_state['content']:
             st.write("No content available to answer the question. Please upload a PDF, image, or audio file.")
-            return  # Do not proceed if there's no content
+            return  # Stop if content is empty
 
         # Prepare the request payload for the model
         data = {
             "model": selected_model_id,
             "messages": [
                 {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                {"role": "system", "content": st.session_state['content']},  # Use the current content as context
+                {"role": "system", "content": st.session_state['content']},  # Use the content in session state
                 {"role": "user", "content": question}
             ],
             "temperature": 0.7,
             "max_tokens": 200,
             "top_p": 0.9
         }
-
+        # Send request to the API
         try:
-            # Send request to the API
             response = requests.post(f"{base_url}/chat/completions", headers=headers, json=data)
             if response.status_code == 200:
                 result = response.json()
@@ -403,6 +402,7 @@ def ask_question(question):
                 st.write(f"Answer: {answer}")
                 # Optionally, update content with the latest answer
                 st.session_state['content'] += f"\n{question}: {answer}"
+
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
