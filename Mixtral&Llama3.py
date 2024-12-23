@@ -124,7 +124,7 @@ def summarize_text_with_rouge(text, model_id, reference_summary=None):
                 rougeL = scores["rougeL"]
                 
                 # Print ROUGE scores
-                st.write(f"ROUGE-1: {rouge1.fmeasure:.2f}, ROUGE-2: {rouge2.fmeasure:.2f}, ROUGE-L: {rougeL.fmeasure:.2f}")
+                st.write(f"ROUGE-1: {rouge1.fmeasure:.4f}, ROUGE-2: {rouge2.fmeasure:.4f}, ROUGE-L: {rougeL.fmeasure:.4f}")
             return generated_summary, summarization_time
         else:
             return f"Error {response.status_code}: {response.text}", 0
