@@ -417,14 +417,13 @@ content = st.session_state.get("content", "")
 # Step 1: Ask question with a blank input box and unique key
 question = st.text_input("Ask a question about the content:", key="question_input")
 
-
 # Function to handle question submission and API request
-def ask_question(question, model_id, content):
-    if question and model_id:
+def ask_question(question):
+    if question and selected_model_id:
         # Prepare the request payload
         url = f"{base_url}/chat/completions"
         data = {
-            "model": model_id,
+            "model": selected_model_id,
             "messages": [
                 {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
                 {"role": "system", "content": content},
@@ -461,26 +460,12 @@ def ask_question(question, model_id, content):
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
-
-# Streamlit interface to input and interact
-st.title("Botify - Ask a Question")
-st.markdown("Please select a model and ask your question.")
-
-# Model selection dropdown
-selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
-selected_model_id = available_models.get(selected_model_name)
-
-# Text input for asking a question
-question = st.text_input("Ask a question about the content:", key="question_input")
-
-# The content to base the question on (for demonstration, you can change this)
-content = "This is an example of the content that the user can ask questions about. The content can be extracted from a PDF, image, or text input."
-
-# Ask question when the input is submitted
+    
+# Handle question submission
 if question:
-    ask_question(question, selected_model_id, content)
+    ask_question(question)
 
-# Display the interaction history in the sidebar
+# Step 2: Display the interaction history in the sidebar
 if "history" in st.session_state and st.session_state.history:
     st.sidebar.header("Interaction History")
     for idx, interaction in enumerate(st.session_state.history):
