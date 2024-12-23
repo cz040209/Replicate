@@ -344,6 +344,24 @@ if content:
     translated_content = translate_text(content, selected_language, selected_model_id)
 
 
+# Add "Start New" button in the sidebar
+start_new_button = st.sidebar.button("Start New", key="start_new_button", help="Click to start a new conversation and clear all chat content")
+
+# Function to reset chat content and history
+def start_new_conversation():
+    # Clear session state variables to start fresh
+    st.session_state['history'] = []
+    st.session_state['content'] = ''
+    st.session_state['question_input'] = ''
+    st.session_state['generated_summary'] = ''  # Clear the generated summary if any
+    st.session_state['pdf_text'] = ''  # Clear PDF text
+    st.session_state['question_input'] = ''  # Reset the question input field
+    st.experimental_rerun()  # Refresh the app to reflect changes
+
+# If the "Start New" button is pressed in the sidebar, clear session state and restart
+if start_new_button:
+    start_new_conversation()
+
 # Display the interaction history in the sidebar with clickable expanders
 if "history" in st.session_state and st.session_state.history:
     st.sidebar.header("Interaction History")
@@ -373,7 +391,6 @@ if "history" in st.session_state and st.session_state.history:
                 # Do not add a new history entry; just continue from the last response
                 st.session_state['history'] = st.session_state['history'][:idx+1]  # Keep the history up to the selected interaction
                 st.rerun()  # Rerun the app to update the chat flow
-
 
 # Text area input with placeholder "Message Botify" without extra label
 question = st.text_area("", 
@@ -457,7 +474,6 @@ def ask_question(question):
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
-
 
 # Ask the question when the "Send" button is pressed
 if send_button:
