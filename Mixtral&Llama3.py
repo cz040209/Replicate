@@ -338,54 +338,73 @@ if content:
     tts.save("translated_response.mp3")
     st.audio("translated_response.mp3", format="audio/mp3")
 
-# Step 5: Allow user to ask questions about the content (if any)
+# Step 5: Allow user to ask questions about the content (interactive chat loop)
 if content and selected_model_id:
-    if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
-        question = st.text_input("Ask a question about the content:", key="question_input_1")
+    # Initialize conversation if it doesn't exist
+    if len(st.session_state.conversation) == 0:
+        # Start the conversation with a welcome message from the assistant
+        st.session_state.conversation.append({
+            "role": "system", 
+            "content": "You are a helpful assistant. Answer the user's questions and ask for more clarification if needed."
+        })
+        st.session_state.conversation.append({
+            "role": "assistant", 
+            "content": "Hello, how can I help you?"
+        })
 
-        if question:
-            # Add user question to conversation history
-            st.session_state["conversation"].append({"role": "user", "content": question})
+    # Display the conversation so far
+    for message in st.session_state.conversation:
+        role = "User" if message["role"] == "user" else "Botify"
+        st.markdown(f"**{role}:** {message['content']}")
 
-            url = f"{base_url}/chat/completions" 
+    # User input for the next question
+    question = st.text_input("You:", key="question_input")
+    
+    if question:
+        # Add user question to the conversation
+        st.session_state.conversation.append({"role": "user", "content": question})
 
-            # Send the full conversation to the model (including all previous user questions and responses)
-            conversation_history = [
-                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                {"role": "system", "content": content},
-            ]
-            # Include all prior messages (questions + responses) as context
-            for message in st.session_state["conversation"]:
-                conversation_history.append(message)
+        # Prepare the conversation history for the model request
+        conversation_history = [{"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."}]
+        conversation_history.append({"role": "system", "content": content})
 
-            # Send the conversation to the model
-            data = {
-                "model": selected_model_id,
-                "messages": conversation_history,
-                "temperature": 0.7,
-                "max_tokens": 200,
-                "top_p": 0.9
-            }
+        # Include all prior messages (questions + responses) as context for the model
+        for message in st.session_state.conversation:
+            conversation_history.append(message)
 
-            try:
-                response = requests.post(url, headers=headers, json=data)
-                if response.status_code == 200:
-                    result = response.json()
-                    answer = result['choices'][0]['message']['content']
+        # Send the conversation history to the model
+        data = {
+            "model": selected_model_id,
+            "messages": conversation_history,
+            "temperature": 0.7,
+            "max_tokens": 200,
+            "top_p": 0.9
+        }
 
-                    # Add model's response to conversation history
-                    st.session_state["conversation"].append({"role": "assistant", "content": answer})
+        try:
+            # Request response from the model
+            response = requests.post(url, headers=headers, json=data)
+            if response.status_code == 200:
+                result = response.json()
+                answer = result['choices'][0]['message']['content']
 
-                    # Display the model's answer
-                    st.write(f"Answer: {answer}")
-                else:
-                    st.write(f"Error {response.status_code}: {response.text}")
-            except requests.exceptions.RequestException as e:
-                st.write(f"An error occurred: {e}")
-        
-    else:
-        # If there's already a response from the model, ask for follow-up questions
-        st.write("You can ask more questions or clarify any points.")
+                # Add model's response to conversation history
+                st.session_state.conversation.append({"role": "assistant", "content": answer})
+
+                # Display the model's answer
+                st.write(f"Botify: {answer}")
+
+                # Follow-up question from Botify
+                st.session_state.conversation.append({
+                    "role": "assistant", 
+                    "content": "Hope that can help you. Do you need more clarification or still have any questions?"
+                })
+            
+            else:
+                st.write(f"Error {response.status_code}: {response.text}")
+        except requests.exceptions.RequestException as e:
+            st.write(f"An error occurred: {e}")
+
 
 # Add "Start a New Chat" button to the sidebar
 if st.sidebar.button("Start a New Chat"):
@@ -460,13 +479,6 @@ if content and selected_model_id:
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
-
-# Display full conversation history in the app
-if "conversation" in st.session_state and st.session_state["conversation"]:
-    st.write("### Conversation History:")
-    for msg in st.session_state["conversation"]:
-        role = "User" if msg["role"] == "user" else "Assistant"
-        st.markdown(f"**{role}:** {msg['content']}")
 
 if st.button("End Chat"):
     st.session_state["conversation"] = []  # Clear the conversation
