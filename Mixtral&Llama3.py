@@ -11,6 +11,9 @@ import json
 from io import BytesIO
 import openai
 import pytz
+from rouge_score import rouge_scorer
+
+
 
 # Hugging Face BLIP-2 Setup
 hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
@@ -470,3 +473,29 @@ def ask_question(question):
 # Ask the question when the "Send" button is pressed
 if send_button:
     ask_question(question)
+
+
+
+# Function to compute ROUGE score
+def evaluate_summarization(reference_summary, generated_summary):
+    scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
+    scores = scorer.score(reference_summary, generated_summary)
+    return scores
+
+# Example reference summary (ground truth) and model-generated summaries
+reference_summary = "This is the ground truth summary of the document."
+
+# Example generated summaries by different models
+generated_summary_mixtral = "Mixtral's generated summary."
+generated_summary_llama = "Llama's generated summary."
+generated_summary_gemma = "Gemma's generated summary."
+
+# Evaluate summaries
+scores_mixtral = evaluate_summarization(reference_summary, generated_summary_mixtral)
+scores_llama = evaluate_summarization(reference_summary, generated_summary_llama)
+scores_gemma = evaluate_summarization(reference_summary, generated_summary_gemma)
+
+# Print ROUGE scores
+print("Mixtral Scores:", scores_mixtral)
+print("Llama Scores:", scores_llama)
+print("Gemma Scores:", scores_gemma)
