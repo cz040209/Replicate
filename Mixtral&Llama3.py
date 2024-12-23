@@ -394,16 +394,16 @@ if "history" in st.session_state and st.session_state.history:
 
 # Add "Start a New Chat" button to the sidebar
 if st.sidebar.button("Start a New Chat"):
-    # Reset the content, uploaded files, and chat response for starting fresh
+    # Reset the session state variables related to content and interactions
+    st.session_state['history'] = []  # Clear chat history
     st.session_state['content'] = ''  # Clear the current content
-    st.session_state['question_input'] = ''  # Clear the question input
+    st.session_state['question_input'] = ''  # Clear the last question input
     st.session_state['uploaded_file'] = None  # Clear the uploaded file (PDF or Image)
     st.session_state['uploaded_audio'] = None  # Clear the uploaded audio file
     st.session_state['image_text'] = ''  # Clear the image text (BLIP-2 extraction)
     st.session_state['pdf_text'] = ''  # Clear the PDF text extraction
     st.session_state['audio_transcript'] = ''  # Clear audio transcription text
     st.session_state['response_audio'] = None  # Clear the response audio
-    st.session_state['question_input'] = ''  # Clear the last question input
     st.rerun()  # Refresh the app to reflect the changes
 
 
