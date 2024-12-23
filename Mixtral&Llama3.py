@@ -411,7 +411,7 @@ if content and selected_model_id:
 
 # Add "Start a New Chat" button to the sidebar
 if st.sidebar.button("Start a New Chat"):
-    # Only clear the current chat-related variables, NOT the history
+    # Clear all the session state variables related to the current chat
     st.session_state['content'] = ''  # Clear the current content
     st.session_state['uploaded_file'] = None  # Clear any uploaded PDF
     st.session_state['uploaded_audio'] = None  # Clear any uploaded audio
@@ -419,9 +419,10 @@ if st.sidebar.button("Start a New Chat"):
     st.session_state['uploaded_image'] = None  # Clear any uploaded image
     st.session_state['selected_model_id'] = None  # Clear model selection
     st.session_state['selected_language'] = "English"  # Optionally reset the language
-    
+    st.session_state['history'] = []  # Clear the chat history
+
     # Optionally, reset UI components, such as resetting dropdowns or text fields
-    st.rerun()  # Refresh the app to reflect the changes
+    st.experimental_rerun()  # Refresh the app to reflect the changes
 
 
 # Sidebar header for the chat history
