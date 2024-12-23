@@ -406,7 +406,7 @@ if st.sidebar.button("Start a New Chat"):
 
 # Text area input with placeholder "Message Botify" without extra label
 question = st.text_area("", 
-                        st.session_state.get('question_input', ''),  # Use session state for preserving input
+                        st.session_state.get('question_input', ''),  # Preserve input in session state
                         key="question_input", 
                         placeholder="Message Botify",  # Placeholder text
                         height=150)  # Adjust the height as needed
@@ -414,6 +414,7 @@ question = st.text_area("",
 # Add a "Send" button styled with an arrow
 send_button = st.button("Send", key="send_button", help="Click to send your message")
 
+# Function to handle question submission and API request
 # Function to handle question submission and API request
 def ask_question(question):
     if question and selected_model_id:
@@ -449,7 +450,7 @@ def ask_question(question):
                 }
                 if "history" not in st.session_state:
                     st.session_state.history = []
-                st.session_state.history.append(interaction)  # Add a new entry only when the user sends a new question
+                st.session_state.history.append(interaction)  # Add a new entry when a new message is sent
 
                 # Display the answer
                 st.write(f"Answer: {answer}")
@@ -460,6 +461,23 @@ def ask_question(question):
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
-# Ask the question when the "Send" button is pressed
+# Display the chat conversation dynamically
+st.write("### Chat Conversation")
+for msg in st.session_state.history:
+    if isinstance(msg, dict) and "role" in msg and "content" in msg:
+        if msg["role"] == "user":
+            st.markdown(f"\U0001F9D1 **User**: {msg['question']}")
+            st.markdown(f"\U0001F9D1 **User's Message**: {msg['response']}")
+        elif msg["role"] == "assistant":
+            st.markdown(f"\U0001F916 **Botify**: {msg['response']}")
+    else:
+        st.error("Error: A message is missing or malformed in the chat history.")
+
+
+# Add a "Send" button styled with an arrow
+send_button = st.button("Send", key="send_button", help="Click to send your message")
+
+# Call the function to ask the question and update chat history
 if send_button:
     ask_question(question)
+
