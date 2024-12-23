@@ -12,4 +12,4 @@ gTTS
 numpy
 openai
 google-generativeai
-
+torch
