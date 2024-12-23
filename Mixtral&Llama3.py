@@ -372,7 +372,6 @@ if content and selected_model_id:
         st.write("You can ask more questions or clarify any points.")
 
 
-
 # Initialize session state if not already done
 if "history" not in st.session_state:
     st.session_state.history = []
@@ -406,34 +405,42 @@ def ask_question(question):
         try:
             # Send request to the API
             response = requests.post(url, headers=headers, json=data)
+            
+            # Debug: Log raw response text
+            st.write(f"Raw response: {response.text}")
+
             if response.status_code == 200:
-                result = response.json()
-                answer = result['choices'][0]['message']['content']
+                try:
+                    # Try to parse the response JSON
+                    result = response.json()
+                    answer = result['choices'][0]['message']['content']
 
-                # Track the interaction history
-                malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
-                current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
-                interaction = {
-                    "time": current_time,
-                    "question": question,
-                    "response": answer,
-                    "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available"
-                }
-                st.session_state.history.append(interaction)  # Add a new entry only when the user sends a new question
+                    # Track the interaction history
+                    malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+                    current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
+                    interaction = {
+                        "time": current_time,
+                        "question": question,
+                        "response": answer,
+                        "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available"
+                    }
+                    st.session_state.history.append(interaction)  # Add a new entry only when the user sends a new question
 
-                # Display the answer with a simulated typing effect
-                with st.empty():  # Create a placeholder for the answer that will be updated incrementally
-                    display_answer = ""
-                    for char in answer:
-                        display_answer += char
-                        st.write(display_answer)  # Update the displayed answer progressively
-                        time.sleep(0.05)  # Simulate typing delay
+                    # Display the answer with a simulated typing effect
+                    with st.empty():  # Create a placeholder for the answer that will be updated incrementally
+                        display_answer = ""
+                        for char in answer:
+                            display_answer += char
+                            st.write(display_answer)  # Update the displayed answer progressively
+                            time.sleep(0.05)  # Simulate typing delay
 
-                # Update content with the latest answer
-                st.session_state['content'] += f"\n{question}: {answer}"
+                    # Update content with the latest answer
+                    st.session_state['content'] += f"\n{question}: {answer}"
 
-                # Clear the input after a successful send, inside the try block
-                st.session_state['question_input'] = ""  # Clear input after sending the question
+                    # Clear the input after a successful send, inside the try block
+                    st.session_state['question_input'] = ""  # Clear input after sending the question
+                except ValueError:
+                    st.write(f"Error: Response is not a valid JSON. Raw response: {response.text}")
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
