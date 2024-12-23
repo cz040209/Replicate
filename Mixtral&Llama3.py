@@ -421,8 +421,20 @@ if st.sidebar.button("Start a New Chat"):
     st.session_state['selected_language'] = "English"  # Optionally reset the language
     st.session_state['history'] = []  # Clear the chat history
 
+    # Also clear any content that might have been summarized or translated
+    st.session_state['summary'] = ''  # Clear any previously summarized text
+    st.session_state['translated_summary'] = ''  # Clear any previously translated summary
+    st.session_state['translated_content'] = ''  # Clear any translated content
+    st.session_state['audio_file'] = None  # Clear any audio content generated for speech
+    
+    # Reset the input method and model selection
+    st.session_state['input_method'] = None
+    st.session_state['selected_model_name'] = None  # Reset model selection
+    st.session_state['manual_text'] = ''
+    
     # Optionally, reset UI components, such as resetting dropdowns or text fields
     st.rerun()  # Refresh the app to reflect the changes
+
 
 
 
