@@ -540,11 +540,58 @@ def ask_question(question):
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
-# Call ask_question when the user submits the question
-question = st.session_state.get("question", "")
 
-# Handle when "Send" button is pressed
-if question:
+question = st.text_area("", placeholder="Message Botify", height=150, key="question_input")
+
+# Add a "Send" button styled as an icon
+send_button = st.button("Send", key="send_button", help="Click to send your message")
+
+# Function to handle question submission and API request
+def ask_question(question):
+    if question and selected_model_id:
+        # Prepare the request payload
+        url = f"{base_url}/chat/completions"
+        data = {
+            "model": selected_model_id,
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                {"role": "system", "content": content},
+                {"role": "user", "content": question}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 200,
+            "top_p": 0.9
+        }
+
+        try:
+            # Send request to the API
+            response = requests.post(url, headers=headers, json=data)
+            if response.status_code == 200:
+                result = response.json()
+                answer = result['choices'][0]['message']['content']
+
+                # Track the interaction history
+                malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+                current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
+                interaction = {
+                    "time": current_time,
+                    "question": question,
+                    "response": answer,
+                    "content_preview": content[:100] if content else "No content available"
+                }
+                if "history" not in st.session_state:
+                    st.session_state.history = []
+                st.session_state.history.append(interaction)
+
+                # Display the answer
+                st.write(f"Answer: {answer}")
+            else:
+                st.write(f"Error {response.status_code}: {response.text}")
+        except requests.exceptions.RequestException as e:
+            st.write(f"An error occurred: {e}")
+
+# Ask the question when the "Send" button is pressed
+if send_button:
     ask_question(question)
 
 # Display the interaction history in the sidebar
