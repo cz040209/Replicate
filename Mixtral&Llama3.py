@@ -12,6 +12,8 @@ from io import BytesIO
 import openai
 import pytz
 import time
+from rouge_score import rouge_scorer
+
 
 # Hugging Face BLIP-2 Setup
 hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
@@ -86,8 +88,7 @@ def extract_text_from_pdf(pdf_file):
         extracted_text += page.extract_text()
     return extracted_text
 
-# Function to Summarize the Text
-def summarize_text(text, model_id):
+def summarize_text_with_rouge(text, model_id, reference_summary=None):
     # Start the timer to measure summarization time
     start_time = time.time()
     
@@ -112,12 +113,24 @@ def summarize_text(text, model_id):
         
         if response.status_code == 200:
             result = response.json()
-            summary = result['choices'][0]['message']['content']
-            return summary, summarization_time  # Return summary and summarization time
+            generated_summary = result['choices'][0]['message']['content']
+            
+            # ROUGE score calculation if reference summary is provided
+            if reference_summary:
+                scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
+                scores = scorer.score(reference_summary, generated_summary)
+                rouge1 = scores["rouge1"]
+                rouge2 = scores["rouge2"]
+                rougeL = scores["rougeL"]
+                
+                # Print ROUGE scores
+                st.write(f"ROUGE-1: {rouge1.fmeasure:.2f}, ROUGE-2: {rouge2.fmeasure:.2f}, ROUGE-L: {rougeL.fmeasure:.2f}")
+            return generated_summary, summarization_time
         else:
-            return f"Error {response.status_code}: {response.text}", summarization_time
+            return f"Error {response.status_code}: {response.text}", 0
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}", 0
+
 
 
 # Function to Translate Text Using the Selected Model
@@ -249,23 +262,26 @@ if input_method == "Upload PDF":
     if st.button("Summarize Text"):
         st.write("Summarizing the text...")
         
+        # Optional: If you have a reference summary, set it here for ROUGE scoring
+        reference_summary = "This is a sample reference summary for ROUGE evaluation."
+    
         # Measure summarization time
-        summary, summarization_time = summarize_text(pdf_text, selected_model_id)
+        generated_summary, summarization_time = summarize_text_with_rouge(pdf_text, selected_model_id, reference_summary=reference_summary)
         
         # Display the summary and summarization time
         st.write("Summary:")
-        st.write(summary)
+        st.write(generated_summary)
         st.write(f"Summarization Time: {summarization_time:.2f} seconds")
-
+    
         # Convert summary to audio in English (not translated)
-        tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+        tts = gTTS(text=generated_summary, lang='en')  # Use English summary for audio
         tts.save("response.mp3")
         st.audio("response.mp3", format="audio/mp3")
-
+    
         st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
-
+    
         # Translate the summary to the selected language
-        translated_summary = translate_text(summary, selected_language, selected_model_id)
+        translated_summary = translate_text(generated_summary, selected_language, selected_model_id)
         st.write(f"Translated Summary in {selected_language}:")
         st.write(translated_summary)
 
