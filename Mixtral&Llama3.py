@@ -404,7 +404,7 @@ send_button = st.button("Send", key="send_button", help="Click to send your mess
 
 # Function to ask a question about the content
 def ask_question(question):
-    if question and selected_model_id:
+    if question and 'content' in st.session_state and st.session_state['content']:
         # Track start time for question response
         start_time = time.time()
 
@@ -474,6 +474,7 @@ def ask_question(question):
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
+
 
 # Ask the question when the "Send" button is pressed
 if send_button:
