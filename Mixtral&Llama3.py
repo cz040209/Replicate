@@ -420,121 +420,65 @@ if "history" in st.session_state and st.session_state.history:
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
 
-# Initialize the session state for history
-if "history" not in st.session_state:
-    st.session_state.history = []
 
-# Set timezone to Malaysia (or preferred timezone)
-malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+# Step 5: Allow user to ask questions about the content (if any)
+if content and selected_model_id:
+    # Initialize session history if not already done
+    if "history" not in st.session_state:
+        st.session_state.history = []
 
-# Function to process the user's question
-def ask_question(question, content, selected_model_id):
-    # Prepare the interaction data for history tracking
-    current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
-    interaction = {
-        "time": current_time,
-        "question": question,
-        "response": "",
-        "content_preview": content[:100] if content else "No content available"
-    }
+    # Display chat history
+    for interaction in st.session_state.history:
+        st.markdown(f"**{interaction['time']}**")
+        st.markdown(f"**Question**: {interaction['question']}")
+        st.markdown(f"**Response**: {interaction['response']}")
+        st.markdown("---")
 
-    # Add the user question to the history
-    st.session_state.history.append(interaction)
-
-    # Send the question along with the content to the selected model API for the response
-    url = f"{base_url}/chat/completions"
-    data = {
-        "model": selected_model_id,
-        "messages": [
-            {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-            {"role": "system", "content": content},
-            {"role": "user", "content": question}
-        ],
-        "temperature": 0.7,
-        "max_tokens": 200,
-        "top_p": 0.9
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        if response.status_code == 200:
-            result = response.json()
-            answer = result['choices'][0]['message']['content']
-
-            # Store the model's answer in the interaction history
-            st.session_state.history[-1]["response"] = answer
-
-            return answer
-        else:
-            return f"Error {response.status_code}: {response.text}"
-    except requests.exceptions.RequestException as e:
-        return f"An error occurred: {e}"
-
-# Display the conversation history
-def display_conversation():
-    for message in st.session_state.history:
-        if message["response"]:
-            st.markdown(f"<div style='font-size: 14px;'><strong>{message['time']}</strong></div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size: 16px;'><strong>User:</strong> {message['question']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size: 16px;'><strong>Bot:</strong> {message['response']}</div>", unsafe_allow_html=True)
-            st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line for separation
-
-# Chat Input at the bottom of the page
-with st.container():
-    st.markdown("""
-        <style>
-            .chat-bar {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background-color: #282c34;
-                padding: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                z-index: 100;
-            }
-            .chat-bar input {
-                width: 80%;
-                padding: 10px;
-                font-size: 16px;
-                border-radius: 5px;
-                border: 1px solid #ccc;
-                background-color: #fff;
-                color: #333;
-            }
-            .chat-bar button {
-                background-color: #61dafb;
-                padding: 10px 15px;
-                border: none;
-                border-radius: 5px;
-                color: white;
-                cursor: pointer;
-                font-size: 16px;
-            }
-            .chat-bar button:hover {
-                background-color: #45a1d2;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # Input for user question
+    # Ask for a new question
     question = st.text_input("Ask a question about the content:")
 
     if question:
-        # Get the model response
-        answer = ask_question(question, content, selected_model_id)
+        # Get the current time (Malaysia timezone)
+        malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+        current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
 
-        # Display the new conversation history
-        display_conversation()
+        # Add the question to session history
+        interaction = {
+            "time": current_time,
+            "question": question,
+            "response": "",
+            "content_preview": content[:100] if content else "No content available"
+        }
 
-# Sidebar header for the chat history
-if "history" in st.session_state and st.session_state.history:
-    st.sidebar.header("Interaction History")
-    for idx, interaction in enumerate(st.session_state.history):
-        st.sidebar.markdown(f"**{interaction['time']}**")
-        st.sidebar.markdown(f"**Question**: {interaction['question']}")
-        st.sidebar.markdown(f"**Response**: {interaction['response']}")
-        st.sidebar.markdown("---")
+        st.session_state.history.append(interaction)
 
+        # Send the question along with the content to the selected model API for the response
+        url = f"{base_url}/chat/completions"
+        data = {
+            "model": selected_model_id,
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                {"role": "system", "content": content},
+                {"role": "user", "content": question}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 200,
+            "top_p": 0.9
+        }
+
+        try:
+            response = requests.post(url, headers=headers, json=data)
+            if response.status_code == 200:
+                result = response.json()
+                answer = result['choices'][0]['message']['content']
+
+                # Store the model's answer in the interaction history
+                st.session_state.history[-1]["response"] = answer
+
+                # Display the model's response
+                st.write(f"**Answer**: {answer}")
+
+            else:
+                st.write(f"Error {response.status_code}: {response.text}")
+        except requests.exceptions.RequestException as e:
+            st.write(f"An error occurred: {e}")
