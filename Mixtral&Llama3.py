@@ -449,10 +449,45 @@ if st.sidebar.button("Start a New Chat"):
 # Sidebar header for the chat history
 if "history" in st.session_state and st.session_state.history:
     st.sidebar.header("Interaction History")
+    # Display each interaction with a clickable link
     for idx, interaction in enumerate(st.session_state.history):
-        st.sidebar.markdown(f"**{interaction['time']}**")
-        st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")
-        st.sidebar.markdown(f"**Question**: {interaction['question']}")
-        st.sidebar.markdown(f"**Response**: {interaction['response']}")
-        st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
-        st.sidebar.markdown("---")
+        # Create a clickable link for each interaction in the history
+        with st.sidebar.expander(f"Interaction {idx + 1} - {interaction['time']}"):
+            st.markdown(f"**Input Method**: {interaction['input_method']}")
+            st.markdown(f"**Question**: {interaction['question']}")
+            st.markdown(f"**Response**: {interaction['response']}")
+            st.markdown(f"**Content Preview**: {interaction['content_preview']}")
+
+            # Optionally, display more details when clicking on each entry
+            if interaction['response']:
+                st.markdown("---")
+                st.markdown(f"**Full Content**: {interaction['content_preview']}")
+                st.markdown(f"**Answer**: {interaction['response']}")
+                # You can add any additional details, like translation or summary
+                # Example of adding the full content if it was summarized or translated
+                if 'translated_summary' in interaction and interaction['translated_summary']:
+                    st.markdown(f"**Translated Summary**: {interaction['translated_summary']}")
+                if 'audio_file' in interaction and interaction['audio_file']:
+                    st.audio(interaction['audio_file'], format="audio/mp3")
+else:
+    st.sidebar.write("No interactions to display.")
+
+# Main section to allow user to view previous interaction content (click interaction to display it)
+if 'history' in st.session_state and len(st.session_state.history) > 0:
+    # Select interaction from history for display
+    interaction_idx = st.selectbox("Select an Interaction to Review", range(len(st.session_state.history)))
+    selected_interaction = st.session_state.history[interaction_idx]
+    
+    # Display full details of selected interaction
+    st.subheader(f"Interaction {interaction_idx + 1} Details")
+    st.write(f"**Time**: {selected_interaction['time']}")
+    st.write(f"**Input Method**: {selected_interaction['input_method']}")
+    st.write(f"**Question**: {selected_interaction['question']}")
+    st.write(f"**Response**: {selected_interaction['response']}")
+    st.write(f"**Content Preview**: {selected_interaction['content_preview']}")
+    
+    # Optionally, you can add more sections for the full content or any other detail (e.g., translations, audio, etc.)
+    if 'translated_summary' in selected_interaction and selected_interaction['translated_summary']:
+        st.write(f"**Translated Summary**: {selected_interaction['translated_summary']}")
+    if 'audio_file' in selected_interaction and selected_interaction['audio_file']:
+        st.audio(selected_interaction['audio_file'], format="audio/mp3")
