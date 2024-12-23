@@ -251,45 +251,47 @@ selected_language = st.selectbox("Choose your preferred language for output", la
 # Step 1: Handle PDF Upload and Summarization
 if input_method == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
-    
+
     if uploaded_file:
         # Extract text from the uploaded PDF
         st.write("Extracting text from the uploaded PDF...")
         pdf_text = extract_text_from_pdf(uploaded_file)
         st.success("Text extracted successfully!")
         content = pdf_text
-    else:
-        st.error("Please upload a PDF file to proceed.")
 
-    if st.button("Summarize Text"):
-        st.write("Summarizing the text...")
-    
-        # Optional: If you have a reference summary, set it here for ROUGE scoring
-        reference_summary = "This is a sample reference summary for ROUGE evaluation."
-        
-        # Measure summarization time
-        generated_summary, summarization_time = summarize_text_with_rouge(pdf_text, selected_model_id, reference_summary=reference_summary)
-        
-        # Store the generated summary in session state for later use in Q&A
-        st.session_state['generated_summary'] = generated_summary  # Store it in session state
-        
-        # Display the summary and summarization time
-        st.write("Summary:")
-        st.write(generated_summary)
-        st.write(f"Summarization Time: {summarization_time:.2f} seconds")
-    
-        # Convert summary to audio in English (not translated)
-        tts = gTTS(text=generated_summary, lang='en')  # Use English summary for audio
-        tts.save("response.mp3")
-        st.audio("response.mp3", format="audio/mp3")
-    
-        st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
-    
-        # Translate the summary to the selected language
-        translated_summary = translate_text(generated_summary, selected_language, selected_model_id)
-        st.write(f"Translated Summary in {selected_language}:")
-        st.write(translated_summary)
+        # Initialize session state variables
+        st.session_state['content'] = content  # Store the extracted text in session state
+        st.session_state['pdf_text'] = content  # Store a copy of the full PDF text for later use
 
+        # Summarize the extracted text only when the button is clicked
+        if st.button("Summarize Text"):
+            st.write("Summarizing the text...")
+
+            # Optional: If you have a reference summary, set it here for ROUGE scoring
+            reference_summary = "This is a sample reference summary for ROUGE evaluation."
+
+            # Measure summarization time
+            generated_summary, summarization_time = summarize_text_with_rouge(pdf_text, selected_model_id, reference_summary=reference_summary)
+
+            # Store the generated summary in session state
+            st.session_state['generated_summary'] = generated_summary
+
+            # Display the summary and summarization time
+            st.write("Summary:")
+            st.write(generated_summary)
+            st.write(f"Summarization Time: {summarization_time:.2f} seconds")
+
+            # Convert summary to audio in English (not translated)
+            tts = gTTS(text=generated_summary, lang='en')  # Use English summary for audio
+            tts.save("response.mp3")
+            st.audio("response.mp3", format="audio/mp3")
+
+            st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
+
+            # Translate the summary to the selected language
+            translated_summary = translate_text(generated_summary, selected_language, selected_model_id)
+            st.write(f"Translated Summary in {selected_language}:")
+            st.write(translated_summary)
 
 # Step 3: Handle Image Upload
 elif input_method == "Upload Image":
