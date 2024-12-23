@@ -467,6 +467,8 @@ def ask_question(question):
                 st.write(f"Answer: {answer}")
                 # Update content with the latest answer
                 st.session_state['content'] += f"\n{question}: {answer}"
+                
+                # Clear the input only after a successful send
                 st.session_state['question_input'] = ""  # Clear input after sending the question
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
