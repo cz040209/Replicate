@@ -16,11 +16,6 @@ api_key = st.secrets["gemini_api"]["api_key"]
 
 genai.configure(api_key=api_key)
 
-# Hugging Face BLIP-2 Setup
-hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
-blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
-blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
-
 # Custom CSS for a more premium look
 st.markdown("""
     <style>
