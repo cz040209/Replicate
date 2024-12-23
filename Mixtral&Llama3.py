@@ -118,6 +118,9 @@ def summarize_text(text, model_id):
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
 
+# Input Method Selection - Add this at the beginning of your code
+input_method = st.selectbox("Select Input Method", ["Upload PDF", "Upload Audio", "Upload Image"])
+
 # Handle the PDF Upload
 if input_method == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
