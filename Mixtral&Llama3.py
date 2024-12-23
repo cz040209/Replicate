@@ -414,31 +414,50 @@ if st.sidebar.button("Start a New Chat"):
 # Initialize content variable for any previous input (e.g., extracted text or user input)
 content = st.session_state.get("content", "")
 
-# Create a custom container with a text area and an icon inside
+# Model selection dropdown
+selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
+selected_model_id = available_models.get(selected_model_name)
+
+# Create a custom container with a text area and a triangle arrow icon inside
 st.markdown("""
     <style>
         .input-container {
             position: relative;
             width: 100%;
+            border-radius: 10px;  /* Rounded corners for the container */
+            background-color: #f7f7f7;  /* Light background for the container */
+            padding: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);  /* Soft shadow effect */
         }
         .input-container textarea {
             width: 100%;
             height: 150px;
             padding-right: 35px; /* Add space on the right for the icon */
             box-sizing: border-box;
+            border-radius: 10px;  /* Rounded corners for the textarea */
+            border: 1px solid #dcdcdc;  /* Light border */
+            background-color: white;  /* White background for the text area */
+            font-size: 16px;  /* Slightly larger text */
+            color: #333;  /* Dark text color */
+            padding: 12px;  /* Add padding inside the text area */
+            transition: border 0.3s ease;  /* Smooth border color transition */
+        }
+        .input-container textarea:focus {
+            border-color: #007bff;  /* Blue border when focused */
+            outline: none;  /* Remove default outline */
         }
         .send-icon {
             position: absolute;
             right: 10px;
             bottom: 10px;
-            font-size: 20px;
+            font-size: 24px;  /* Increase icon size */
             cursor: pointer;
-            color: #007bff;
+            color: #007bff;  /* Blue color for the send icon */
         }
     </style>
     <div class="input-container">
         <textarea id="question_input" placeholder="Message Botify" class="css-1bp68v4"></textarea>
-        <span class="send-icon" onclick="sendMessage()">✉️</span>
+        <span class="send-icon" onclick="sendMessage()">▶</span> <!-- Triangle arrow icon here -->
     </div>
     <script>
         function sendMessage() {
@@ -494,9 +513,8 @@ def ask_question(question):
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
-# Ask the question when the "Send" icon is pressed
-if 'question_input' in st.session_state:
-    question = st.session_state.question_input  # Retrieve the value of the text area
+# Ask the question when the "Send" button is pressed
+if send_button:
     ask_question(question)
 
 # Display the interaction history in the sidebar
