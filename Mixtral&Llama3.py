@@ -326,7 +326,6 @@ if content and selected_model_id:
         question = st.text_input("Ask a question about the content:")
 
         if question:
-            ask_question(question)
             # Set the timezone to Malaysia for the timestamp
             malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
             current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
