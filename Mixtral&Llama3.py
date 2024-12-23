@@ -422,7 +422,8 @@ if st.sidebar.button("Start a New Chat"):
     st.session_state['history'] = []  # Clear the chat history
 
     # Optionally, reset UI components, such as resetting dropdowns or text fields
-    st.experimental_rerun()  # Refresh the app to reflect the changes
+    st.rerun()  # Refresh the app to reflect the changes
+
 
 
 # Sidebar header for the chat history
