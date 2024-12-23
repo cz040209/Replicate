@@ -4,13 +4,68 @@ import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
-from transformers import BlipProcessor, BlipForConditionalGeneration
+from transformers import BlipProcessor, BlipForConditionalGeneration, LlamaTokenizer, LlamaForQuestionAnswering, Trainer, TrainingArguments
+
 import torch
 from PIL import Image
 import json
 from io import BytesIO
 import openai
 import pytz
+from datasets import load_dataset
+
+dataset = load_dataset("squad")
+
+# Load the tokenizer for Llama-3 (assuming it's a variant of Llama)
+tokenizer = LlamaTokenizer.from_pretrained('facebook/llama-3.1-8b')
+
+# Preprocess function to tokenize the input and answer
+def preprocess_function(examples):
+    questions = [q.strip() for q in examples["question"]]
+    contexts = [c.strip() for c in examples["context"]]
+    
+    inputs = tokenizer(questions, contexts, padding="max_length", truncation=True, max_length=512)
+    return inputs
+
+# Apply preprocessing
+train_dataset = dataset["train"].map(preprocess_function, batched=True)
+validation_dataset = dataset["validation"].map(preprocess_function, batched=True)
+
+# Load the Llama-3 model
+model = LlamaForQuestionAnswering.from_pretrained("facebook/llama-3.1-8b")
+
+# Define the training arguments
+training_args = TrainingArguments(
+    output_dir="./llama_finetuned_educational",  # output directory
+    evaluation_strategy="epoch",  # Evaluate after every epoch
+    learning_rate=2e-5,
+    per_device_train_batch_size=4,  # Adjust based on your GPU memory
+    per_device_eval_batch_size=8,
+    num_train_epochs=3,
+    weight_decay=0.01,
+    save_strategy="epoch",
+    logging_dir="./logs",
+    logging_steps=100,
+)
+
+# Define the Trainer
+trainer = Trainer(
+    model=model,  # The pre-trained model you loaded
+    args=training_args,  # Training arguments
+    train_dataset=train_dataset,  # Preprocessed train dataset
+    eval_dataset=validation_dataset,  # Preprocessed validation dataset
+    tokenizer=tokenizer,  # Tokenizer for the Llama model
+)
+
+# Train the model
+trainer.train()
+
+model.save_pretrained("llama_educational_model")
+tokenizer.save_pretrained("llama_educational_model")
+
+results = trainer.evaluate()
+print(results)
+
 
 # Hugging Face BLIP-2 Setup
 hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
