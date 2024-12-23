@@ -404,7 +404,8 @@ if st.sidebar.button("Start a New Chat"):
     st.session_state['response_audio'] = None  # Clear the response audio
     st.session_state['question_input'] = ''  # Clear the question input to reset it
     
-    st.rerun()  # Refresh the app to reflect the changes
+    # Rerun the app to reflect the changes
+    st.experimental_rerun()
 
 
 # Text area input with placeholder "Message Botify" without extra label
