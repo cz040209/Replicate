@@ -419,3 +419,61 @@ if "history" in st.session_state and st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
+
+
+
+if "conversation" not in st.session_state:
+    st.session_state["conversation"] = []  # Store the full conversation
+
+# Append user question to conversation
+if content and selected_model_id:
+    question = st.text_input("Ask a question about the content:")
+    
+    if question:
+        # Add user question to conversation history
+        st.session_state["conversation"].append({"role": "user", "content": question})
+
+        # Send the full conversation to the model (including all previous user questions and responses)
+        conversation_history = [
+            {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+            {"role": "system", "content": content},
+        ]
+        # Include all prior messages (questions + responses) as context
+        for message in st.session_state["conversation"]:
+            conversation_history.append(message)
+
+        # Send the conversation to the model
+        data = {
+            "model": selected_model_id,
+            "messages": conversation_history,
+            "temperature": 0.7,
+            "max_tokens": 200,
+            "top_p": 0.9
+        }
+
+        try:
+            response = requests.post(url, headers=headers, json=data)
+            if response.status_code == 200:
+                result = response.json()
+                answer = result['choices'][0]['message']['content']
+
+                # Add model's response to conversation history
+                st.session_state["conversation"].append({"role": "assistant", "content": answer})
+
+                # Display the model's answer
+                st.write(f"Answer: {answer}")
+            else:
+                st.write(f"Error {response.status_code}: {response.text}")
+        except requests.exceptions.RequestException as e:
+            st.write(f"An error occurred: {e}")
+
+# Display full conversation history in the app
+if "conversation" in st.session_state and st.session_state["conversation"]:
+    st.write("### Conversation History:")
+    for msg in st.session_state["conversation"]:
+        role = "User" if msg["role"] == "user" else "Assistant"
+        st.markdown(f"**{role}:** {msg['content']}")
+
+if st.button("End Chat"):
+    st.session_state["conversation"] = []  # Clear the conversation
+    st.write("### Chat ended. Feel free to ask more questions or start a new session.")
