@@ -342,7 +342,7 @@ if content:
 # Ensure conversation history and content are retained
 if content and selected_model_id:
     # Display a single input box for the user to ask their question
-    question = st.text_input("Ask a question about the content:", key="question_input")
+    question = st.text_input("Ask a question about the content:")
 
     if question:
         # Add user question to the conversation (but don't display it to the user yet)
@@ -396,8 +396,6 @@ if content and selected_model_id:
 
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
-
-
 
 
 
