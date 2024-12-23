@@ -4,8 +4,8 @@ import PyPDF2
 from datetime import datetime
 from gtts import gTTS  # Import gtts for text-to-speech
 import os
-from transformers import BlipProcessor, BlipForConditionalGeneration, LlamaTokenizer, LlamaForQuestionAnswering, Trainer, TrainingArguments
-
+from transformers import BlipProcessor, BlipForConditionalGeneration 
+from transformers import LlamaTokenizer, LlamaForQuestionAnswering, Trainer, TrainingArguments
 import torch
 from PIL import Image
 import json
