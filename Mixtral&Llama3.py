@@ -361,8 +361,13 @@ send_button = st.button("Send", key="send_button", help="Click to send your mess
 
 # Function to handle question submission and API request
 def ask_question(question):
-    if question and selected_model_id:
-        # Prepare the request payload
+    if question:
+        # Check if there is content from a previous PDF, image, or audio file upload
+        if 'content' not in st.session_state or not st.session_state['content']:
+            st.write("No content available to answer the question. Please upload a PDF, image, or audio file.")
+            return  # Do not proceed if there's no content
+
+        # Prepare the request payload for the model
         url = f"{base_url}/chat/completions"
         data = {
             "model": selected_model_id,
@@ -383,7 +388,7 @@ def ask_question(question):
                 result = response.json()
                 answer = result['choices'][0]['message']['content']
 
-                # Track the interaction history
+                # Track the interaction history with the time of the question
                 malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
                 current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
                 interaction = {
@@ -398,13 +403,13 @@ def ask_question(question):
 
                 # Display the answer
                 st.write(f"Answer: {answer}")
-                # Update content with the latest answer
+                # Update content with the latest answer (optional, if you want to keep track of the Q&A flow)
                 st.session_state['content'] += f"\n{question}: {answer}"
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
-
+            
 # Ask the question when the "Send" button is pressed
 if send_button:
     ask_question(question)
