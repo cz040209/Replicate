@@ -410,11 +410,14 @@ if st.sidebar.button("Start a New Chat"):
     st.rerun()  # Refresh the app to reflect the changes
 
 
-# Text area input with placeholder "Message Botify"
+# Initialize content variable for any previous input (e.g., extracted text or user input)
+content = st.session_state.get("content", "")
+
+# Create the text area input with a placeholder
 question = st.text_area("", placeholder="Message Botify", height=150, key="question_input")
 
-# Add a "Send" button styled as an icon
-send_button = st.button("Send", key="send_button", help="Click to send your message")
+# Display a "Send" icon button
+send_icon = st.button("✉️", key="send_button", help="Click to send your message", use_container_width=False)
 
 # Function to handle question submission and API request
 def ask_question(question):
@@ -460,8 +463,8 @@ def ask_question(question):
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
-# Ask the question when the "Send" button is pressed
-if send_button:
+# Ask the question when the "Send" icon is pressed
+if send_icon:
     ask_question(question)
 
 # Display the interaction history in the sidebar
