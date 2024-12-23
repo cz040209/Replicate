@@ -409,18 +409,9 @@ if st.sidebar.button("Start a New Chat"):
     # Optionally, reset UI components, such as resetting dropdowns or text fields
     st.rerun()  # Refresh the app to reflect the changes
 
-# Sidebar header for the chat history
-if "history" in st.session_state and st.session_state.history:
-    st.sidebar.header("Interaction History")
-    for idx, interaction in enumerate(st.session_state.history):
-        st.sidebar.markdown(f"**{interaction['time']}**")
-        st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")
-        st.sidebar.markdown(f"**Question**: {interaction['question']}")
-        st.sidebar.markdown(f"**Response**: {interaction['response']}")
-        st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
-        st.sidebar.markdown("---")
 
-# Persistent Question Input Box
+
+# Persistent Question Input Box (Floating Question Box)
 st.markdown("""
     <div style="
         position: fixed;
@@ -503,11 +494,21 @@ def ask_question(question):
     # Store the user's question in the session state for further processing
     st.session_state["question"] = question
 
-# Trigger to ask a question
+# Trigger to ask a question (with a unique key for each text_input)
 if content and selected_model_id:
-    question = st.text_input("Ask a question about the content:")
+    question = st.text_input("Ask a question about the content:", key="question_input_1")  # Unique key added
     if question:
         ask_question(question)
+
+# Example of avoiding duplicate IDs for another input if you need to create another text_input
+manual_text = st.text_area("Enter your text manually:", key="manual_text_area_1")  # Another unique key
+if manual_text:
+    content = manual_text
+
+# Example of another `text_input` for handling questions related to audio or images
+audio_question = st.text_input("Ask a question related to audio/image:", key="audio_question_input_1")  # Unique key for audio-related question
+if audio_question:
+    ask_question(audio_question)
 
 # Sidebar header for the chat history
 if "history" in st.session_state and st.session_state.history:
