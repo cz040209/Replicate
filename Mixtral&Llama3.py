@@ -265,7 +265,8 @@ elif input_method == "Upload Image":
             image_text = extract_text_from_image(uploaded_image)
             st.success("Text extracted successfully!")
 
-            # Directly display the extracted text
+            # Add the title "The image describes:" before the extracted text
+            st.markdown("### The image describes:")
             st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
 
             content = image_text  # Set the extracted text as content for further processing
@@ -275,6 +276,7 @@ elif input_method == "Upload Image":
         # Model selection for translation and Q&A
         selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
         selected_model_id = available_models.get(selected_model_name)
+
         
 # Step 4: Handle Audio Upload
 elif input_method == "Upload Audio":
