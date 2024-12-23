@@ -498,10 +498,13 @@ if "history" in st.session_state and st.session_state.history:
                 st.session_state['history'] = st.session_state['history'][:idx+1]  # Keep the history up to the selected interaction
                 st.rerun()  # Rerun the app to update the chat flow
 
+# Ensure the `key` for the text area is unique, adding a timestamp
+question_key = f"question_input_{time.time()}"
+
 # Text area input with placeholder "Message Botify" without extra label
 question = st.text_area("", 
                         st.session_state.get('question_input', ''),  # Use session state for preserving input
-                        key="question_input", 
+                        key=question_key,  # Make the key unique by appending the timestamp
                         placeholder="Message Botify",  # Placeholder text
                         height=150)  # Adjust the height as needed
 
