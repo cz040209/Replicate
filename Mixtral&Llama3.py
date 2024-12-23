@@ -11,9 +11,6 @@ import json
 from io import BytesIO
 import openai
 import pytz
-from rouge_score import rouge_scorer
-
-
 
 # Hugging Face BLIP-2 Setup
 hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
@@ -88,6 +85,29 @@ def extract_text_from_pdf(pdf_file):
         extracted_text += page.extract_text()
     return extracted_text
 
+# Function to Summarize the Text
+def summarize_text(text, model_id):
+    url = f"{base_url}/chat/completions"
+    data = {
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant. Summarize the following text:"},
+            {"role": "user", "content": text}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 300,
+        "top_p": 0.9
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content']
+        else:
+            return f"Error {response.status_code}: {response.text}"
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred: {e}"
 
 # Function to Translate Text Using the Selected Model
 def translate_text(text, target_language, model_id):
@@ -168,6 +188,9 @@ def extract_text_from_image(image_file):
 
     return caption
 
+# Input Method Selection
+input_method = st.selectbox("Select Input Method", ["Upload PDF", "Upload Audio", "Upload Image"])
+
 # Model selection - Available only for PDF and manual text input
 if input_method in ["Upload PDF"]:
     selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
@@ -198,40 +221,7 @@ languages = [
 ]
 selected_language = st.selectbox("Choose your preferred language for output", languages)
 
-# Function to compute ROUGE score
-def evaluate_summarization(reference_summary, generated_summary):
-    scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
-    scores = scorer.score(reference_summary, generated_summary)
-    return scores
-
-# Function to summarize the text (already implemented in your code)
-def summarize_text(text, model_id):
-    url = f"{base_url}/chat/completions"
-    data = {
-        "model": model_id,
-        "messages": [
-            {"role": "system", "content": "You are a helpful assistant. Summarize the following text:"},
-            {"role": "user", "content": text}
-        ],
-        "temperature": 0.7,
-        "max_tokens": 300,
-        "top_p": 0.9
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        if response.status_code == 200:
-            result = response.json()
-            return result['choices'][0]['message']['content']
-        else:
-            return f"Error {response.status_code}: {response.text}"
-    except requests.exceptions.RequestException as e:
-        return f"An error occurred: {e}"
-
-# Input Method Selection - Add this at the beginning of your code
-input_method = st.selectbox("Select Input Method", ["Upload PDF", "Upload Audio", "Upload Image"])
-
-# Handle the PDF Upload
+# Step 1: Handle PDF Upload
 if input_method == "Upload PDF":
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
     
@@ -247,38 +237,21 @@ if input_method == "Upload PDF":
     # Summarize the extracted text only when the button is clicked
     if st.button("Summarize Text"):
         st.write("Summarizing the text...")
+        summary = summarize_text(pdf_text, selected_model_id)
+        st.write("Summary:")
+        st.write(summary)
+        
+        # Convert summary to audio in English (not translated)
+        tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+        tts.save("response.mp3")
+        st.audio("response.mp3", format="audio/mp3")
 
-        # Generate and evaluate summaries for each model
-        reference_summary = "This is the ground truth summary of the document."  # Define your reference summary here
+        st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
 
-        for model_name, model_id in available_models.items():
-            st.write(f"### {model_name} Summary:")
-            
-            # Summarize using the selected model
-            summary = summarize_text(pdf_text, model_id)
-            st.write("Summary:")
-            st.write(summary)
-            
-            # Evaluate ROUGE score between the reference and the generated summary
-            scores = evaluate_summarization(reference_summary, summary)
-            
-            # Display ROUGE Scores for each model
-            st.write(f"ROUGE Scores for {model_name}:")
-            st.write(f"ROUGE-1: {scores['rouge1']}")
-            st.write(f"ROUGE-2: {scores['rouge2']}")
-            st.write(f"ROUGE-L: {scores['rougeL']}")
-
-            st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
-
-            # Convert summary to audio in English (not translated)
-            tts = gTTS(text=summary, lang='en')  # Use English summary for audio
-            tts.save(f"{model_name}_response.mp3")
-            st.audio(f"{model_name}_response.mp3", format="audio/mp3")
-
-            # Translate the summary to the selected language
-            translated_summary = translate_text(summary, selected_language, model_id)
-            st.write(f"Translated Summary in {selected_language}:")
-            st.write(translated_summary)
+        # Translate the summary to the selected language
+        translated_summary = translate_text(summary, selected_language, selected_model_id)
+        st.write(f"Translated Summary in {selected_language}:")
+        st.write(translated_summary)
 
 
 # Step 3: Handle Image Upload
