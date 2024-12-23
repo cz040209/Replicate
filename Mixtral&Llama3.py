@@ -433,7 +433,7 @@ if content and selected_model_id:
         st.session_state['history'] = []  # Clear the interaction history
         st.session_state['content'] = ''  # Clear the content
         st.session_state['question_input'] = ''  # Clear the question input
-        st.experimental_rerun()  # Refresh the app to apply the reset
+        st.rerun()  # Refresh the app to apply the reset
         
 
 # Display the interaction history in the sidebar with clickable expanders
