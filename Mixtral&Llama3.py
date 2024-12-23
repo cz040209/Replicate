@@ -465,12 +465,13 @@ def ask_question(question):
 if send_button:
     ask_question(question)
 
-# Display the interaction history in the sidebar
+# Display the interaction history in the sidebar with clickable expanders
 if "history" in st.session_state and st.session_state.history:
     st.sidebar.header("Interaction History")
     for idx, interaction in enumerate(st.session_state.history):
-        st.sidebar.markdown(f"**{interaction['time']}**")
-        st.sidebar.markdown(f"**Question**: {interaction['question']}")
-        st.sidebar.markdown(f"**Response**: {interaction['response']}")
-        st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
-        st.sidebar.markdown("---")
+        # Create an expander for each interaction item
+        with st.sidebar.expander(f"Interaction {idx+1} - {interaction['time']}"):
+            st.markdown(f"**Question**: {interaction['question']}")
+            st.markdown(f"**Response**: {interaction['response']}")
+            st.markdown(f"**Content Preview**: {interaction['content_preview']}")
+            st.sidebar.markdown("---")
