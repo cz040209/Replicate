@@ -13,4 +13,4 @@ numpy
 openai
 google-generativeai
 torch
-datasets
+datasets==2.4.0
