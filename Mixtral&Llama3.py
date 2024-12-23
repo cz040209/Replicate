@@ -231,9 +231,12 @@ if input_method == "Upload PDF":
         pdf_text = extract_text_from_pdf(uploaded_file)
         st.success("Text extracted successfully!")
     
-        # Assign extracted text to content for chat (but do not show the extracted text)
+        # Display extracted text with adjusted font size
+        with st.expander("View Extracted Text"):
+            st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
+    
+        # Assign extracted text to content for chat
         content = pdf_text
-
     else:
         st.error("Please upload a PDF file to proceed.")
 
@@ -243,18 +246,18 @@ if input_method == "Upload PDF":
         summary = summarize_text(pdf_text, selected_model_id)
         st.write("Summary:")
         st.write(summary)
-    
-        # Convert summary to audio in English (not translated) after the summary is displayed
-        tts = gTTS(text=summary, lang='en')  # Use English summary for audio
-        tts.save("response.mp3")
-        st.audio("response.mp3", format="audio/mp3")
-    
+
         st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
-    
+
         # Translate the summary to the selected language
         translated_summary = translate_text(summary, selected_language, selected_model_id)
         st.write(f"Translated Summary in {selected_language}:")
         st.write(translated_summary)
+
+        # Convert summary to audio in English (not translated)
+        tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+        tts.save("response.mp3")
+        st.audio("response.mp3", format="audio/mp3")
 
 
 # Step 3: Handle Image Upload
@@ -275,6 +278,10 @@ elif input_method == "Upload Image":
             content = image_text
         except Exception as e:
             st.error(f"Error extracting text from image: {e}")
+
+        # Select a model for translation and Q&A
+        selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
+        selected_model_id = available_models.get(selected_model_name)
 
 # Step 4: Handle Audio Upload
 elif input_method == "Upload Audio":
@@ -301,6 +308,68 @@ elif input_method == "Upload Audio":
 # Translation of the extracted text to selected language
 if content:
     translated_content = translate_text(content, selected_language, selected_model_id)
+
+    # Convert the translated content to speech (if needed)
+    tts = gTTS(text=translated_content, lang='en')  # For demonstration in English
+    tts.save("translated_response.mp3")
+    st.audio("translated_response.mp3", format="audio/mp3")
+
+# Step 5: Allow user to ask questions about the content (if any)
+if content and selected_model_id:
+    if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
+        question = st.text_input("Ask a question about the content:")
+
+        if question:
+            # Set the timezone to Malaysia for the timestamp
+            malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+            current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
+
+            # Prepare the interaction data for history tracking
+            interaction = {
+                "time": current_time,
+                "input_method": input_method,
+                "question": question,
+                "response": "",
+                "content_preview": content[:100] if content else "No content available"
+            }
+
+            # Add the user question to the history
+            st.session_state.history.append(interaction)
+
+            # Send the question along with the content to the selected model API for the response
+            url = f"{base_url}/chat/completions"
+            data = {
+                "model": selected_model_id,
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                    {"role": "system", "content": content},
+                    {"role": "user", "content": question}
+                ],
+                "temperature": 0.7,
+                "max_tokens": 200,
+                "top_p": 0.9
+            }
+
+            try:
+                response = requests.post(url, headers=headers, json=data)
+                if response.status_code == 200:
+                    result = response.json()
+                    answer = result['choices'][0]['message']['content']
+
+                    # Store the model's answer in the interaction history
+                    st.session_state.history[-1]["response"] = answer
+
+                    # Display the model's response
+                    st.write(f"Answer: {answer}")
+
+                else:
+                    st.write(f"Error {response.status_code}: {response.text}")
+            except requests.exceptions.RequestException as e:
+                st.write(f"An error occurred: {e}")
+        
+    else:
+        # If there's already a response from the model, ask for follow-up questions
+        st.write("You can ask more questions or clarify any points.")
 
 
 # Display the interaction history in the sidebar with clickable expanders
@@ -351,33 +420,31 @@ question = st.text_area("",
 # Add a "Send" button styled with an arrow
 send_button = st.button("Send", key="send_button", help="Click to send your message")
 
+# Function to handle question submission and API request
 def ask_question(question):
-    if question:
-        # Ensure that content is correctly set in session_state
-        if 'content' not in st.session_state or not st.session_state['content']:
-            st.write("No content available to answer the question. Please upload a PDF, image, or audio file.")
-            return  # Stop if content is empty
-
-        # Prepare the request payload for the model
+    if question and selected_model_id:
+        # Prepare the request payload
+        url = f"{base_url}/chat/completions"
         data = {
             "model": selected_model_id,
             "messages": [
                 {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                {"role": "system", "content": st.session_state['content']},  # Use the content in session state
+                {"role": "system", "content": st.session_state['content']},  # Use the current content as context
                 {"role": "user", "content": question}
             ],
             "temperature": 0.7,
             "max_tokens": 200,
             "top_p": 0.9
         }
-        # Send request to the API
+
         try:
-            response = requests.post(f"{base_url}/chat/completions", headers=headers, json=data)
+            # Send request to the API
+            response = requests.post(url, headers=headers, json=data)
             if response.status_code == 200:
                 result = response.json()
                 answer = result['choices'][0]['message']['content']
 
-                # Track the interaction history with the time of the question
+                # Track the interaction history
                 malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
                 current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
                 interaction = {
@@ -392,15 +459,13 @@ def ask_question(question):
 
                 # Display the answer
                 st.write(f"Answer: {answer}")
-                # Optionally, update content with the latest answer
+                # Update content with the latest answer
                 st.session_state['content'] += f"\n{question}: {answer}"
-
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
-            
 # Ask the question when the "Send" button is pressed
 if send_button:
     ask_question(question)
