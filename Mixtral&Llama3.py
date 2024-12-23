@@ -339,45 +339,30 @@ if content:
     tts.save("translated_response.mp3")
     st.audio("translated_response.mp3", format="audio/mp3")
 
-# Step 5: Allow user to ask questions about the content (interactive chat loop)
+# Ensure conversation history and content are retained
 if content and selected_model_id:
-    # Initialize conversation if it doesn't exist
-    if len(st.session_state.conversation) == 0:
-        # Start the conversation with a welcome message from the assistant
-        st.session_state.conversation.append({
-            "role": "system", 
-            "content": "You are a helpful assistant. Answer the user's questions and ask for more clarification if needed."
-        })
-        st.session_state.conversation.append({
-            "role": "assistant", 
-            "content": "Hello, how can I help you?"
-        })
-
-    # Display the conversation so far
-    for message in st.session_state.conversation:
-        role = "User" if message["role"] == "user" else "Botify"
-        st.markdown(f"**{role}:** {message['content']}")
-
-    # User input for the next question
-    question = st.text_input("You:", key="question_input")
+    # Display a single input box for the user to ask their question
+    question = st.text_input("Ask a question about the content:", key="question_input")
 
     if question:
-        # Add user question to the conversation
+        # Add user question to the conversation (but don't display it to the user yet)
         st.session_state.conversation.append({"role": "user", "content": question})
 
-        # Prepare the conversation history for the model request
-        conversation_history = [{"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."}]
-        conversation_history.append({"role": "system", "content": content})
+        # Prepare conversation history with the system and content
+        conversation_history = [
+            {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+            {"role": "system", "content": content},  # Keep the content for context
+        ]
 
-        # Include all prior messages (questions + responses) as context for the model
+        # Add previous conversation exchanges (if any)
         for message in st.session_state.conversation:
             conversation_history.append(message)
 
-        # Ensure the conversation history isn't too long
-        if len(conversation_history) > 20:  # Limit the number of messages to avoid hitting token limits
+        # Ensure we don't hit token limits by limiting the number of messages (keep conversation context)
+        if len(conversation_history) > 20:  # Limit to the last 20 messages
             conversation_history = conversation_history[-20:]
 
-        # Prepare the data for the API request
+        # Prepare the request to the model
         data = {
             "model": selected_model_id,
             "messages": conversation_history,
@@ -387,30 +372,32 @@ if content and selected_model_id:
         }
 
         try:
-            # Request response from the model
-            response = requests.post(f"{base_url}/chat/completions", headers=headers, json=data)
+            # Send the conversation to the API to get a response
+            response = requests.post(url, headers=headers, json=data)
             
             if response.status_code == 200:
                 result = response.json()
                 answer = result['choices'][0]['message']['content']
 
-                # Add model's response to conversation history
+                # Add the model's response to the conversation history
                 st.session_state.conversation.append({"role": "assistant", "content": answer})
 
-                # Display the model's answer
+                # Display the model's response only, without showing the user's question
                 st.write(f"Botify: {answer}")
 
-                # Follow-up question from Botify
+                # Optionally, continue the conversation and ask for more questions
                 st.session_state.conversation.append({
                     "role": "assistant", 
                     "content": "Hope that helps! Do you need more clarification or have any other questions?"
                 })
-            
+
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
 
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
+
+
 
 
 
