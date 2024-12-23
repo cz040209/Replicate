@@ -341,34 +341,25 @@ if content:
 # Step 5: Allow user to ask questions about the content (if any)
 if content and selected_model_id:
     if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
-        question = st.text_input("Ask a question about the content:")
+        question = st.text_input("Ask a question about the content:", key="question_input_1")
 
         if question:
-            # Set the timezone to Malaysia for the timestamp
-            malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
-            current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
+            # Add user question to conversation history
+            st.session_state["conversation"].append({"role": "user", "content": question})
 
-            # Prepare the interaction data for history tracking
-            interaction = {
-                "time": current_time,
-                "input_method": input_method,
-                "question": question,
-                "response": "",
-                "content_preview": content[:100] if content else "No content available"
-            }
+            # Send the full conversation to the model (including all previous user questions and responses)
+            conversation_history = [
+                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                {"role": "system", "content": content},
+            ]
+            # Include all prior messages (questions + responses) as context
+            for message in st.session_state["conversation"]:
+                conversation_history.append(message)
 
-            # Add the user question to the history
-            st.session_state.history.append(interaction)
-
-            # Send the question along with the content to the selected model API for the response
-            url = f"{base_url}/chat/completions"
+            # Send the conversation to the model
             data = {
                 "model": selected_model_id,
-                "messages": [
-                    {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                    {"role": "system", "content": content},
-                    {"role": "user", "content": question}
-                ],
+                "messages": conversation_history,
                 "temperature": 0.7,
                 "max_tokens": 200,
                 "top_p": 0.9
@@ -380,12 +371,11 @@ if content and selected_model_id:
                     result = response.json()
                     answer = result['choices'][0]['message']['content']
 
-                    # Store the model's answer in the interaction history
-                    st.session_state.history[-1]["response"] = answer
+                    # Add model's response to conversation history
+                    st.session_state["conversation"].append({"role": "assistant", "content": answer})
 
-                    # Display the model's response
+                    # Display the model's answer
                     st.write(f"Answer: {answer}")
-
                 else:
                     st.write(f"Error {response.status_code}: {response.text}")
             except requests.exceptions.RequestException as e:
@@ -422,12 +412,13 @@ if "history" in st.session_state and st.session_state.history:
 
 
 
+# Sidebar for interaction history
 if "conversation" not in st.session_state:
     st.session_state["conversation"] = []  # Store the full conversation
 
 # Append user question to conversation
 if content and selected_model_id:
-    question = st.text_input("Ask a question about the content:")
+    question = st.text_input("Ask a question about the content:", key="question_input_sidebar_1")
     
     if question:
         # Add user question to conversation history
@@ -466,6 +457,7 @@ if content and selected_model_id:
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
+
 
 # Display full conversation history in the app
 if "conversation" in st.session_state and st.session_state["conversation"]:
