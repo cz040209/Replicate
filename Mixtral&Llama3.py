@@ -409,9 +409,11 @@ if st.sidebar.button("Start a New Chat"):
     # Optionally, reset UI components, such as resetting dropdowns or text fields
     st.rerun()  # Refresh the app to reflect the changes
 
-# Sidebar header for the chat history
+# Sidebar header for the chat history and chat input box
 if "history" in st.session_state and st.session_state.history:
     st.sidebar.header("Interaction History")
+    
+    # Display each interaction in the sidebar
     for idx, interaction in enumerate(st.session_state.history):
         st.sidebar.markdown(f"**{interaction['time']}**")
         st.sidebar.markdown(f"**Input Method**: {interaction['input_method']}")
@@ -419,3 +421,35 @@ if "history" in st.session_state and st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
+
+# Add a text input box in the sidebar for live chat-like input
+if 'chat_input' not in st.session_state:
+    st.session_state['chat_input'] = ""  # Initialize the chat input state
+
+# Display live chat input box and handle user input
+chat_input = st.text_input("Ask a question:", key="chat_input")
+
+if chat_input:
+    # Add the user's question to the session history (you can use chat input for a specific purpose)
+    current_time = datetime.now(pytz.timezone("Asia/Kuala_Lumpur")).strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Record the user input as part of the history
+    interaction = {
+        "time": current_time,
+        "input_method": "Chat Input",
+        "question": chat_input,
+        "response": "",  # Placeholder for assistant's response
+        "content_preview": "No content"  # Or use the relevant content if needed
+    }
+    st.session_state.history.append(interaction)
+    
+    # Here, you can add any additional logic, such as sending the question to a model and receiving the response
+    # For now, we will mock a response from the assistant
+    assistant_response = "This is a mock response."  # Replace with model's answer after processing
+    
+    # Update the interaction with the assistant's response
+    st.session_state.history[-1]["response"] = assistant_response
+    st.write(f"Assistant: {assistant_response}")  # Displaying response to the user
+
+
+
