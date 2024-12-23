@@ -381,6 +381,63 @@ if "content" not in st.session_state:
 if "question_input" not in st.session_state:
     st.session_state.question_input = ""
 
+# Function to handle question submission and API request
+def ask_question(question):
+    if question and selected_model_id:
+        # Prepare the request payload, including all previous interactions for context
+        url = f"{base_url}/chat/completions"
+        data = {
+            "model": selected_model_id,
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                {"role": "system", "content": st.session_state['content']},  # Use the current content as context
+                {"role": "user", "content": question}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 200,
+            "top_p": 0.9
+        }
+
+        try:
+            # Send request to the API
+            response = requests.post(url, headers=headers, json=data)
+            if response.status_code == 200:
+                result = response.json()
+                answer = result['choices'][0]['message']['content']
+
+                # Track the interaction history
+                malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+                current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
+                interaction = {
+                    "time": current_time,
+                    "question": question,
+                    "response": answer,
+                    "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available"
+                }
+                st.session_state.history.append(interaction)  # Add a new entry only when the user sends a new question
+
+                # Display the answer with a simulated typing effect
+                with st.empty():  # Create a placeholder for the answer that will be updated incrementally
+                    display_answer = ""
+                    for char in answer:
+                        display_answer += char
+                        st.write(display_answer)  # Update the displayed answer progressively
+                        time.sleep(0.05)  # Simulate typing delay
+
+                # Update content with the latest answer
+                st.session_state['content'] += f"\n{question}: {answer}"
+
+                # Clear the input after a successful send, inside the try block
+                st.session_state['question_input'] = ""  # Clear input after sending the question
+            else:
+                st.write(f"Error {response.status_code}: {response.text}")
+        except requests.exceptions.RequestException as e:
+            st.write(f"An error occurred: {e}")
+
+# Ask the question when the "Send" button is pressed
+if send_button:
+    ask_question(question)
+
 # Display the interaction history in the sidebar with clickable expanders
 if "history" in st.session_state and st.session_state.history:
     st.sidebar.header("Interaction History")
@@ -427,54 +484,3 @@ question = st.text_area("",
 
 # Add a "Send" button styled with an arrow
 send_button = st.button("Send", key="send_button", help="Click to send your message")
-
-# Function to handle question submission and API request
-def ask_question(question):
-    if question and selected_model_id:
-        # Prepare the request payload, including all previous interactions for context
-        url = f"{base_url}/chat/completions"
-        data = {
-            "model": selected_model_id,
-            "messages": [
-                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                {"role": "system", "content": st.session_state['content']},  # Use the current content as context
-                {"role": "user", "content": question}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 200,
-            "top_p": 0.9
-        }
-
-        try:
-            # Send request to the API
-            response = requests.post(url, headers=headers, json=data)
-            if response.status_code == 200:
-                result = response.json()
-                answer = result['choices'][0]['message']['content']
-
-                # Track the interaction history
-                malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
-                current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
-                interaction = {
-                    "time": current_time,
-                    "question": question,
-                    "response": answer,
-                    "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available"
-                }
-                st.session_state.history.append(interaction)  # Add a new entry only when the user sends a new question
-
-                # Display the answer
-                st.write(f"Answer: {answer}")
-                # Update content with the latest answer
-                st.session_state['content'] += f"\n{question}: {answer}"
-
-                # Clear the input after a successful send, inside the try block
-                st.session_state['question_input'] = ""  # Clear input after sending the question
-            else:
-                st.write(f"Error {response.status_code}: {response.text}")
-        except requests.exceptions.RequestException as e:
-            st.write(f"An error occurred: {e}")
-
-# Ask the question when the "Send" button is pressed
-if send_button:
-    ask_question(question)
