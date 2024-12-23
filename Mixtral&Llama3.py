@@ -470,3 +470,67 @@ def ask_question(question):
 # Ask the question when the "Send" button is pressed
 if send_button:
     ask_question(question)
+
+
+
+# Function to get the response time of a model
+def get_model_response_time(model_id, data):
+    # Record the start time
+    start_time = time.time()
+    
+    try:
+        # Make the API request
+        response = requests.post(f"{base_url}/chat/completions", headers=headers, json=data)
+        
+        # Record the end time
+        end_time = time.time()
+        
+        # Calculate elapsed time
+        elapsed_time = end_time - start_time
+        
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content'], elapsed_time
+        else:
+            return f"Error {response.status_code}: {response.text}", elapsed_time
+    
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred: {e}", None
+
+# Function to ask a question and measure the time performance of models
+def ask_question_with_time_performance(question, selected_model_id, content):
+    # Prepare the request payload
+    data = {
+        "model": selected_model_id,
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+            {"role": "system", "content": content},
+            {"role": "user", "content": question}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 200,
+        "top_p": 0.9
+    }
+
+    # Get the response and measure the time taken by the model
+    response, elapsed_time = get_model_response_time(selected_model_id, data)
+
+    # Return the response and the elapsed time
+    return response, elapsed_time
+
+# Add a selection dropdown for the models in the main UI (PDF, Audio, Image input options)
+model_performance_times = {}
+
+# Check if the user has selected a model and ask the question
+if send_button and selected_model_id:
+    response, elapsed_time = ask_question_with_time_performance(question, selected_model_id, content)
+
+    # Store the performance time for the model
+    model_performance_times[selected_model_id] = elapsed_time
+
+    # Display the response first
+    st.write(f"Answer from {selected_model_id}: {response}")
+
+    # Display the time taken below the answer
+    if elapsed_time is not None:
+        st.write(f"Time taken by {selected_model_id}: {elapsed_time:.2f} seconds")
