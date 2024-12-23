@@ -65,6 +65,7 @@ api_key = st.secrets["groq_api"]["api_key"]
 
 # Base URL and headers for Groq API
 base_url = "https://api.groq.com/openai/v1"
+url = f"{base_url}/chat/completions"
 headers = {
     "Authorization": f"Bearer {api_key}",  # Use api_key here, not groqapi_key
     "Content-Type": "application/json"
@@ -359,7 +360,7 @@ if content and selected_model_id:
 
     # User input for the next question
     question = st.text_input("You:", key="question_input")
-    
+
     if question:
         # Add user question to the conversation
         st.session_state.conversation.append({"role": "user", "content": question})
@@ -372,7 +373,11 @@ if content and selected_model_id:
         for message in st.session_state.conversation:
             conversation_history.append(message)
 
-        # Send the conversation history to the model
+        # Ensure the conversation history isn't too long
+        if len(conversation_history) > 20:  # Limit the number of messages to avoid hitting token limits
+            conversation_history = conversation_history[-20:]
+
+        # Prepare the data for the API request
         data = {
             "model": selected_model_id,
             "messages": conversation_history,
@@ -384,6 +389,7 @@ if content and selected_model_id:
         try:
             # Request response from the model
             response = requests.post(f"{base_url}/chat/completions", headers=headers, json=data)
+            
             if response.status_code == 200:
                 result = response.json()
                 answer = result['choices'][0]['message']['content']
@@ -397,11 +403,12 @@ if content and selected_model_id:
                 # Follow-up question from Botify
                 st.session_state.conversation.append({
                     "role": "assistant", 
-                    "content": "Hope that can help you. Do you need more clarification or still have any questions?"
+                    "content": "Hope that helps! Do you need more clarification or have any other questions?"
                 })
             
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
+
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
