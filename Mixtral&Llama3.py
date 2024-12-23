@@ -231,12 +231,9 @@ if input_method == "Upload PDF":
         pdf_text = extract_text_from_pdf(uploaded_file)
         st.success("Text extracted successfully!")
     
-        # Display extracted text with adjusted font size
-        with st.expander("View Extracted Text"):
-            st.markdown(f"<div style='font-size: 14px;'>{pdf_text}</div>", unsafe_allow_html=True)
-    
-        # Assign extracted text to content for chat
+        # Assign extracted text to content for chat (but do not show the extracted text)
         content = pdf_text
+
     else:
         st.error("Please upload a PDF file to proceed.")
 
@@ -258,6 +255,7 @@ if input_method == "Upload PDF":
         tts = gTTS(text=summary, lang='en')  # Use English summary for audio
         tts.save("response.mp3")
         st.audio("response.mp3", format="audio/mp3")
+
 
 # Step 3: Handle Image Upload
 elif input_method == "Upload Image":
