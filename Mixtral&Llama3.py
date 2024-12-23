@@ -65,7 +65,6 @@ api_key = st.secrets["groq_api"]["api_key"]
 
 # Base URL and headers for Groq API
 base_url = "https://api.groq.com/openai/v1"
-url = f"{base_url}/chat/completions"
 headers = {
     "Authorization": f"Bearer {api_key}",  # Use api_key here, not groqapi_key
     "Content-Type": "application/json"
@@ -339,65 +338,62 @@ if content:
     tts.save("translated_response.mp3")
     st.audio("translated_response.mp3", format="audio/mp3")
 
-# Ensure conversation history and content are retained
+# Step 5: Allow user to ask questions about the content (if any)
 if content and selected_model_id:
-    # Display a single input box for the user to ask their question
-    question = st.text_input("Ask a question about the content:")
+    if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
+        question = st.text_input("Ask a question about the content:")
 
-    if question:
-        # Add user question to the conversation (but don't display it to the user yet)
-        st.session_state.conversation.append({"role": "user", "content": question})
+        if question:
+            # Set the timezone to Malaysia for the timestamp
+            malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+            current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
 
-        # Prepare conversation history with the system and content
-        conversation_history = [
-            {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-            {"role": "system", "content": content},  # Keep the content for context
-        ]
+            # Prepare the interaction data for history tracking
+            interaction = {
+                "time": current_time,
+                "input_method": input_method,
+                "question": question,
+                "response": "",
+                "content_preview": content[:100] if content else "No content available"
+            }
 
-        # Add previous conversation exchanges (if any)
-        for message in st.session_state.conversation:
-            conversation_history.append(message)
+            # Add the user question to the history
+            st.session_state.history.append(interaction)
 
-        # Ensure we don't hit token limits by limiting the number of messages (keep conversation context)
-        if len(conversation_history) > 20:  # Limit to the last 20 messages
-            conversation_history = conversation_history[-20:]
+            # Send the question along with the content to the selected model API for the response
+            url = f"{base_url}/chat/completions"
+            data = {
+                "model": selected_model_id,
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                    {"role": "system", "content": content},
+                    {"role": "user", "content": question}
+                ],
+                "temperature": 0.7,
+                "max_tokens": 200,
+                "top_p": 0.9
+            }
 
-        # Prepare the request to the model
-        data = {
-            "model": selected_model_id,
-            "messages": conversation_history,
-            "temperature": 0.7,
-            "max_tokens": 200,
-            "top_p": 0.9
-        }
+            try:
+                response = requests.post(url, headers=headers, json=data)
+                if response.status_code == 200:
+                    result = response.json()
+                    answer = result['choices'][0]['message']['content']
 
-        try:
-            # Send the conversation to the API to get a response
-            response = requests.post(url, headers=headers, json=data)
-            
-            if response.status_code == 200:
-                result = response.json()
-                answer = result['choices'][0]['message']['content']
+                    # Store the model's answer in the interaction history
+                    st.session_state.history[-1]["response"] = answer
 
-                # Add the model's response to the conversation history
-                st.session_state.conversation.append({"role": "assistant", "content": answer})
+                    # Display the model's response
+                    st.write(f"Answer: {answer}")
 
-                # Display the model's response only, without showing the user's question
-                st.write(f"Botify: {answer}")
-
-                # Optionally, continue the conversation and ask for more questions
-                st.session_state.conversation.append({
-                    "role": "assistant", 
-                    "content": "Hope that helps! Do you need more clarification or have any other questions?"
-                })
-
-            else:
-                st.write(f"Error {response.status_code}: {response.text}")
-
-        except requests.exceptions.RequestException as e:
-            st.write(f"An error occurred: {e}")
-
-
+                else:
+                    st.write(f"Error {response.status_code}: {response.text}")
+            except requests.exceptions.RequestException as e:
+                st.write(f"An error occurred: {e}")
+        
+    else:
+        # If there's already a response from the model, ask for follow-up questions
+        st.write("You can ask more questions or clarify any points.")
 
 # Add "Start a New Chat" button to the sidebar
 if st.sidebar.button("Start a New Chat"):
@@ -423,56 +419,3 @@ if "history" in st.session_state and st.session_state.history:
         st.sidebar.markdown(f"**Response**: {interaction['response']}")
         st.sidebar.markdown(f"**Content Preview**: {interaction['content_preview']}")
         st.sidebar.markdown("---")
-
-
-
-# Sidebar for interaction history
-if "conversation" not in st.session_state:
-    st.session_state["conversation"] = []  # Store the full conversation
-
-# Append user question to conversation
-if content and selected_model_id:
-    question = st.text_input("Ask a question about the content:", key="question_input_sidebar_1")
-    
-    if question:
-        # Add user question to conversation history
-        st.session_state["conversation"].append({"role": "user", "content": question})
-
-        # Send the full conversation to the model (including all previous user questions and responses)
-        conversation_history = [
-            {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-            {"role": "system", "content": content},
-        ]
-        # Include all prior messages (questions + responses) as context
-        for message in st.session_state["conversation"]:
-            conversation_history.append(message)
-
-        # Send the conversation to the model
-        data = {
-            "model": selected_model_id,
-            "messages": conversation_history,
-            "temperature": 0.7,
-            "max_tokens": 200,
-            "top_p": 0.9
-        }
-
-        try:
-            response = requests.post(url, headers=headers, json=data)
-            if response.status_code == 200:
-                result = response.json()
-                answer = result['choices'][0]['message']['content']
-
-                # Add model's response to conversation history
-                st.session_state["conversation"].append({"role": "assistant", "content": answer})
-
-                # Display the model's answer
-                st.write(f"Answer: {answer}")
-            else:
-                st.write(f"Error {response.status_code}: {response.text}")
-        except requests.exceptions.RequestException as e:
-            st.write(f"An error occurred: {e}")
-
-
-if st.button("End Chat"):
-    st.session_state["conversation"] = []  # Clear the conversation
-    st.write("### Chat ended. Feel free to ask more questions or start a new session.")
