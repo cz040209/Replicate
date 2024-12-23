@@ -421,8 +421,12 @@ if st.sidebar.button("Start a New Chat"):
     st.session_state['question_input'] = ''
     st.experimental_rerun()  # Refresh the app to reflect the changes
 
-# Display current question and answer inputs for the ongoing chat
-question = st.text_area("Ask a question about the content:", st.session_state.get('question_input', ''), key="question_input")
+# Text area input with placeholder "Message Botify" without extra label
+question = st.text_area("", 
+                        st.session_state.get('question_input', ''),  # Use session state for preserving input
+                        key="question_input", 
+                        placeholder="Message Botify",  # Placeholder text
+                        height=150)  # Adjust the height as needed
 
 # Add a "Send" button styled with an arrow
 send_button = st.button("Send", key="send_button", help="Click to send your message")
