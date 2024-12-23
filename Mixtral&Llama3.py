@@ -414,8 +414,12 @@ if st.sidebar.button("Start a New Chat"):
 # Initialize content variable for any previous input (e.g., extracted text or user input)
 content = st.session_state.get("content", "")
 
-# Step 1: Ask question with a blank input box and unique key
-question = st.text_input("Ask a question about the content:", key="question_input")
+# Model selection dropdown
+selected_model_name = st.selectbox("Choose a model:", list(available_models.keys()), key="model_selection")
+selected_model_id = available_models.get(selected_model_name)
+
+# Step 1: Ask question with a blank input box and custom prompt
+question = st.text_input("Message Botify", key="question_input")
 
 # Function to handle question submission and API request
 def ask_question(question):
@@ -460,12 +464,12 @@ def ask_question(question):
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
-    
-# Handle question submission
+
+# Ask the question when the input is provided
 if question:
     ask_question(question)
 
-# Step 2: Display the interaction history in the sidebar
+# Display the interaction history in the sidebar
 if "history" in st.session_state and st.session_state.history:
     st.sidebar.header("Interaction History")
     for idx, interaction in enumerate(st.session_state.history):
