@@ -17,45 +17,108 @@ hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
 blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
 blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
 
-# Custom CSS for a more premium look
+# Custom CSS to position the chat input at the bottom
 st.markdown("""
     <style>
-        .css-1d391kg {
-            background-color: #1c1f24;  /* Dark background */
-            color: white;
-            font-family: 'Arial', sans-serif;
+        .chat-container {
+            position: relative;
+            min-height: 70vh;
+            padding-bottom: 80px;  /* Leave space for chat bar */
         }
-        .css-1v0m2ju {
-            background-color: #282c34;  /* Slightly lighter background */
+        .chat-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #282c34;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
         }
-        .css-13ya6yb {
-            background-color: #61dafb;  /* Button color */
-            border-radius: 5px;
-            padding: 10px 20px;
-            color: white;
+        .chat-bar input {
+            width: 80%;
+            padding: 10px;
             font-size: 16px;
-            font-weight: bold;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            color: #333;
         }
-        .css-10trblm {
-            font-size: 18px;
-            font-weight: bold;
-            color: #282c34;
+        .chat-bar button {
+            background-color: #61dafb;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
         }
-        .css-3t9iqy {
-            color: #61dafb;
-            font-size: 20px;
+        .chat-bar button:hover {
+            background-color: #45a1d2;
         }
-        .botify-title {
-            font-family: 'Arial', sans-serif;
-            font-size: 48px;
-            font-weight: bold;
-            color: #61dafb;
-            text-align: center;
-            margin-top: 50px;
-            margin-bottom: 30px;
+        .chat-message {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 10px;
+        }
+        .user-message {
+            background-color: #61dafb;
+            color: white;
+            align-self: flex-end;
+        }
+        .bot-message {
+            background-color: #444;
+            color: white;
+            align-self: flex-start;
         }
     </style>
 """, unsafe_allow_html=True)
+
+# Initialize the conversation history if not already done
+if "history" not in st.session_state:
+    st.session_state.history = []
+
+# Container to hold the chat history
+with st.container():
+    # Display the conversation history
+    for message in st.session_state.history:
+        if message["role"] == "user":
+            st.markdown(f'<div class="chat-message user-message">{message["content"]}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="chat-message bot-message">{message["content"]}</div>', unsafe_allow_html=True)
+
+# The chat input bar always stays at the bottom of the page
+with st.container():
+    st.markdown('<div class="chat-bar">', unsafe_allow_html=True)
+    
+    question = st.text_input("Ask a question about the content:", key="chat_input")
+    
+    if question:
+        # Add user question to history
+        st.session_state.history.append({
+            "role": "user",
+            "content": question,
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+        # Send the question to the selected model (for example, your Groq API or other models)
+        # For now, using a placeholder response
+        response = "This is where the response from the model will go."
+
+        # Add bot's response to history
+        st.session_state.history.append({
+            "role": "bot",
+            "content": response,
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
+        
+        # Scroll to the bottom after new message is added (you may need to update if the component isn't scrolling)
+        st.experimental_rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
 
 # Botify Title
 st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
