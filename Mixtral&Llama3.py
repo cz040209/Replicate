@@ -268,9 +268,6 @@ if input_method == "Upload PDF":
     # Ensure that the "Send" button is only enabled after the summary is done
     send_button = st.button("Send", key="send_button", help="Click to send your message", disabled=not st.session_state["is_summarized"])
 
-# Ask the question when the "Send" button is pressed
-if send_button:
-    ask_question(question)
 
 
 # Step 3: Handle Image Upload
