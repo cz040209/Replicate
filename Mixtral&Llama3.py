@@ -464,3 +464,12 @@ def ask_question(question):
 if send_button:
     ask_question(question)
 
+
+# Add a "Start New Chat" button to reset the session state
+if st.button("Start New Chat"):
+    # Clear the history and content from session state
+    st.session_state['history'] = []  # Clear the history
+    st.session_state['content'] = ''  # Clear the content
+    st.session_state['question_input'] = ''  # Clear the question input
+    st.sidebar.success("Chat history and content have been cleared!")  # Show a success message
+    st.rerun()  # Refresh the app to reset the chat state
