@@ -343,26 +343,132 @@ elif input_method == "Upload Audio":
 if content:
     translated_content = translate_text(content, selected_language, selected_model_id)
 
-
-# Add "Start New" button in the sidebar
-start_new_button = st.sidebar.button("Start New Chat", key="start_new_button", help="Click to start a new conversation and clear all chat content")
-
-# Function to reset chat content and history
-def start_new_conversation():
-    # Clear session state variables to start fresh
-    st.session_state['history'] = []
-    st.session_state['content'] = ''
-    st.session_state['question_input'] = ''
-    st.session_state['generated_summary'] = ''  # Clear the generated summary if any
-    st.session_state['pdf_text'] = ''  # Clear PDF text
-    st.session_state['question_input'] = ''  # Reset the question input field
-    st.rerun()  # Refresh the app to reflect changes
-
-# If the "Start New" button is pressed in the sidebar, clear session state and restart
-if start_new_button:
-    start_new_conversation()
+        
 
 # Display the interaction history in the sidebar with clickable expanders
+if "history" in st.session_state and st.session_state.history:
+    st.sidebar.header("Interaction History")
+
+    # Add the "Clear History" button to reset the interaction history
+    if st.sidebar.button("Clear History"):
+        # Clear the history and content from session state
+        st.session_state['history'] = []
+        st.session_state['content'] = ''
+        st.session_state['question_input'] = ''
+        st.sidebar.success("History has been cleared!")
+        st.rerun()  # Refresh the app to reflect the changes
+
+    # Display the history with expanders
+    for idx, interaction in enumerate(st.session_state.history):
+        with st.sidebar.expander(f"Interaction {idx+1} - {interaction['time']}"):
+            st.markdown(f"*Question*: {interaction['question']}")
+            st.markdown(f"*Response*: {interaction['response']}")
+            st.markdown(f"*Content Preview*: {interaction['content_preview']}")
+
+            # Add a button to let the user pick this interaction to continue
+            if st.button(f"Continue with Interaction {idx+1}", key=f"continue_{idx}"):
+                # Load the selected interaction into the current session state for continuation
+                st.session_state['content'] = interaction['response']  # Set the response as current content
+                st.session_state['question_input'] = interaction['question']  # Load the last question as the input text
+                
+                # Do not add a new history entry; just continue from the last response
+                st.session_state['history'] = st.session_state['history'][:idx+1]  # Keep the history up to the selected interaction
+                st.rerun()  # Rerun the app to update the chat flow
+
+
+# Text area input with placeholder "Message Botify" without extra label
+question = st.text_area("", 
+                        st.session_state.get('question_input', ''),  # Use session state for preserving input
+                        key="question_input", 
+                        placeholder="Message Botify",  # Placeholder text
+                        height=150)  # Adjust the height as needed
+
+# Add a "Send" button styled with an arrow
+send_button = st.button("Send", key="send_button", help="Click to send your message")
+
+# Function to ask a question about the content
+def ask_question(question):
+    if question and selected_model_id:
+        # Track start time for question response
+        start_time = time.time()
+
+        # Prepare the request payload for the question
+        url = f"{base_url}/chat/completions"
+        data = {
+            "model": selected_model_id,
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                {"role": "system", "content": st.session_state['content']},  # Use the current content as context
+                {"role": "user", "content": question}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 200,
+            "top_p": 0.9
+        }
+
+        try:
+            # Send request to the API
+            response = requests.post(url, headers=headers, json=data)
+            
+            # Track end time for question response
+            end_time = time.time()
+            response_time = end_time - start_time
+
+            if response.status_code == 200:
+                result = response.json()
+                answer = result['choices'][0]['message']['content']
+
+                # Track the interaction history
+                malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+                current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
+
+                # Only store interactions with a valid question and response
+                if answer and question:
+                    interaction = {
+                        "time": current_time,
+                        "question": question,
+                        "response": answer,
+                        "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available",
+                        "response_time": f"{response_time:.2f} seconds"  # Store the response time
+                    }
+                    if "history" not in st.session_state:
+                        st.session_state.history = []
+                    st.session_state.history.append(interaction)  # Add a new entry only when there's a valid response
+
+                    # Display the answer along with the response time
+                    st.write(f"Answer: {answer}")
+                    st.write(f"Question Response Time: {response_time:.2f} seconds")
+
+                    # Compute ROUGE scores for the Q&A after summarization
+                    if 'generated_summary' in st.session_state:
+                        reference_summary = st.session_state['generated_summary']
+                        scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
+                        scores = scorer.score(reference_summary, answer)
+                        rouge1 = scores["rouge1"]
+                        rouge2 = scores["rouge2"]
+                        rougeL = scores["rougeL"]
+
+                        # Display ROUGE scores for the question-answering process
+                        st.write(f"ROUGE-1: {rouge1.fmeasure:.4f}, ROUGE-2: {rouge2.fmeasure:.4f}, ROUGE-L: {rougeL.fmeasure:.4f}")
+
+                    # Update content with the latest answer
+                    st.session_state['content'] += f"\n{question}: {answer}"
+
+            else:
+                st.write(f"Error {response.status_code}: {response.text}")
+        except requests.exceptions.RequestException as e:
+            st.write(f"An error occurred: {e}")
+
+# Sidebar: Add a "Start New Chat" button to reset the session state
+if st.sidebar.button("Start New Chat"):
+    # Clear the history and content from session state
+    st.session_state['history'] = []  # Clear the history
+    st.session_state['content'] = ''  # Clear the content
+    st.session_state['question_input'] = ''  # Clear the question input
+    st.sidebar.success("Chat history and content have been cleared!")  # Show a success message
+    st.rerun()  # Refresh the app to reset the chat state
+
+# Sidebar: Display the interaction history with expanders
 if "history" in st.session_state and st.session_state.history:
     st.sidebar.header("Interaction History")
 
@@ -402,80 +508,6 @@ question = st.text_area("",
 # Add a "Send" button styled with an arrow
 send_button = st.button("Send", key="send_button", help="Click to send your message")
 
-def ask_question(question):
-    if question and 'content' in st.session_state and st.session_state['content']:
-        # Track start time for question response
-        start_time = time.time()
-
-        # Use only the latest content and not the entire history
-        base_content = st.session_state['content']
-
-        # Prepare the request payload for the question
-        url = f"{base_url}/chat/completions"
-        data = {
-            "model": selected_model_id,
-            "messages": [
-                {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                {"role": "system", "content": base_content},  # Use initial content as the context
-                {"role": "user", "content": question}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 200,
-            "top_p": 0.9
-        }
-
-        try:
-            # Send request to the API
-            response = requests.post(url, headers=headers, json=data)
-
-            # Track end time for question response
-            end_time = time.time()
-            response_time = end_time - start_time
-
-            if response.status_code == 200:
-                result = response.json()
-                answer = result['choices'][0]['message']['content']
-
-                # Track the interaction history
-                malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
-                current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
-
-                # Only store interactions with a valid question and response
-                if answer and question:
-                    interaction = {
-                        "time": current_time,
-                        "question": question,
-                        "response": answer,
-                        "content_preview": base_content[:100] if base_content else "No content available",
-                        "response_time": f"{response_time:.2f} seconds"  # Store the response time
-                    }
-                    if "history" not in st.session_state:
-                        st.session_state.history = []
-                    st.session_state.history.append(interaction)  # Add a new entry only when there's a valid response
-
-                    # Display the answer along with the response time
-                    st.write(f"Answer: {answer}")
-                    st.write(f"Question Response Time: {response_time:.2f} seconds")
-
-                    # Compute ROUGE scores for the Q&A after summarization
-                    if 'generated_summary' in st.session_state:
-                        reference_summary = st.session_state['generated_summary']
-                        scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
-                        scores = scorer.score(reference_summary, answer)
-                        rouge1 = scores["rouge1"]
-                        rouge2 = scores["rouge2"]
-                        rougeL = scores["rougeL"]
-
-                        # Display ROUGE scores for the question-answering process
-                        st.write(f"ROUGE-1: {rouge1.fmeasure:.4f}, ROUGE-2: {rouge2.fmeasure:.4f}, ROUGE-L: {rougeL.fmeasure:.4f}")
-
-                    # Update content with the latest answer, but ensure it doesn't grow indefinitely
-                    st.session_state['content'] = answer  # Update content with the latest answer only
-
-            else:
-                st.write(f"Error {response.status_code}: {response.text}")
-        except requests.exceptions.RequestException as e:
-            st.write(f"An error occurred: {e}")
 # Ask the question when the "Send" button is pressed
 if send_button:
     ask_question(question)
