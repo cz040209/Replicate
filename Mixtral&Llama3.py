@@ -347,6 +347,8 @@ if content and selected_model_id:
             # Add user question to conversation history
             st.session_state["conversation"].append({"role": "user", "content": question})
 
+            url = f"{base_url}/chat/completions" 
+
             # Send the full conversation to the model (including all previous user questions and responses)
             conversation_history = [
                 {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
