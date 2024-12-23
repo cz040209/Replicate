@@ -383,7 +383,7 @@ if content and selected_model_id:
 
         try:
             # Request response from the model
-            response = requests.post(url, headers=headers, json=data)
+            response = requests.post(f"{base_url}/chat/completions", headers=headers, json=data)
             if response.status_code == 200:
                 result = response.json()
                 answer = result['choices'][0]['message']['content']
@@ -404,6 +404,7 @@ if content and selected_model_id:
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
+
 
 
 # Add "Start a New Chat" button to the sidebar
