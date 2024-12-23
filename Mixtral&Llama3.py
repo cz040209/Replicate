@@ -343,6 +343,97 @@ elif input_method == "Upload Audio":
 if content:
     translated_content = translate_text(content, selected_language, selected_model_id)
 
+
+# Step 5: Allow user to ask questions about the content (if any)
+if content and selected_model_id:
+    # Check if there is content and a model selected, then allow the user to ask questions
+    if len(st.session_state.history) == 0 or st.session_state.history[-1]["response"]:  # If the previous response is done
+        # Ensure that the key for question input is unique
+        question = st.text_input("Ask a question about the content:")
+
+        if question:
+            # Set the timezone to Malaysia for the timestamp
+            malaysia_tz = pytz.timezone("Asia/Kuala_Lumpur")
+            current_time = datetime.now(malaysia_tz).strftime("%Y-%m-%d %H:%M:%S")
+
+            # Prepare the interaction data for history tracking
+            interaction = {
+                "time": current_time,
+                "input_method": input_method,
+                "question": question,
+                "response": "",
+                "content_preview": content[:100] if content else "No content available"
+            }
+
+            # Add the user question to the history
+            st.session_state.history.append(interaction)
+
+            # Track start time for response calculation
+            start_time = time.time()
+
+            # Send the question along with the content to the selected model API for the response
+            url = f"{base_url}/chat/completions"
+            data = {
+                "model": selected_model_id,
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
+                    {"role": "system", "content": content},
+                    {"role": "user", "content": question}
+                ],
+                "temperature": 0.7,
+                "max_tokens": 200,
+                "top_p": 0.9
+            }
+
+            try:
+                # Send the request to the API
+                response = requests.post(url, headers=headers, json=data)
+
+                # Track end time for response calculation
+                end_time = time.time()
+                response_time = end_time - start_time
+
+                if response.status_code == 200:
+                    result = response.json()
+                    answer = result['choices'][0]['message']['content']
+
+                    # Store the model's answer in the interaction history
+                    st.session_state.history[-1]["response"] = answer
+
+                    # Display the model's response
+                    st.write(f"Answer: {answer}")
+                    st.write(f"Response Time: {response_time:.2f} seconds")
+
+                    # Now calculate ROUGE scores between the answer and the content (or summary)
+                    if 'generated_summary' in st.session_state:
+                        reference_summary = st.session_state['generated_summary']  # The content summary
+                        
+                        # Calculate ROUGE scores
+                        scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
+                        scores = scorer.score(reference_summary, answer)
+                        rouge1 = scores["rouge1"]
+                        rouge2 = scores["rouge2"]
+                        rougeL = scores["rougeL"]
+                        
+                        # Display ROUGE scores
+                        st.write(f"ROUGE-1: {rouge1.fmeasure:.4f}, ROUGE-2: {rouge2.fmeasure:.4f}, ROUGE-L: {rougeL.fmeasure:.4f}")
+
+                else:
+                    st.write(f"Error {response.status_code}: {response.text}")
+            except requests.exceptions.RequestException as e:
+                st.write(f"An error occurred: {e}")
+
+    else:
+        # If there's already a response from the model, ask for follow-up questions
+        st.write("You can ask more questions or clarify any points.")
+    
+    # Start New Chat button, placed below the question input
+    if st.button("Start New Chat"):
+        # Clear the session state variables related to the content and history
+        st.session_state['history'] = []  # Clear the interaction history
+        st.session_state['content'] = ''  # Clear the content
+        st.session_state['question_input'] = ''  # Clear the question input
+        st.rerun()  # Refresh the app to apply the reset
         
 
 # Display the interaction history in the sidebar with clickable expanders
@@ -459,57 +550,6 @@ def ask_question(question):
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
 
-# Sidebar: Add a "Start New Chat" button to reset the session state
-if st.sidebar.button("Start New Chat"):
-    # Clear the history and content from session state
-    st.session_state['history'] = []  # Clear the history
-    st.session_state['content'] = ''  # Clear the content
-    st.session_state['question_input'] = ''  # Clear the question input
-    st.sidebar.success("Chat history and content have been cleared!")  # Show a success message
-    st.rerun()  # Refresh the app to reset the chat state
-
-# Sidebar: Display the interaction history with expanders
-if "history" in st.session_state and st.session_state.history:
-    st.sidebar.header("Interaction History")
-
-    # Add the "Clear History" button to reset the interaction history
-    if st.sidebar.button("Clear History"):
-        # Clear the history and content from session state
-        st.session_state['history'] = []
-        st.session_state['content'] = ''
-        st.session_state['question_input'] = ''
-        st.sidebar.success("History has been cleared!")
-        st.rerun()  # Refresh the app to reflect the changes
-
-    # Display the history with expanders
-    for idx, interaction in enumerate(st.session_state.history):
-        with st.sidebar.expander(f"Interaction {idx+1} - {interaction['time']}"):
-            st.markdown(f"*Question*: {interaction['question']}")
-            st.markdown(f"*Response*: {interaction['response']}")
-            st.markdown(f"*Content Preview*: {interaction['content_preview']}")
-
-            # Add a button to let the user pick this interaction to continue
-            if st.button(f"Continue with Interaction {idx+1}", key=f"continue_{idx}"):
-                # Load the selected interaction into the current session state for continuation
-                st.session_state['content'] = interaction['response']  # Set the response as current content
-                st.session_state['question_input'] = interaction['question']  # Load the last question as the input text
-                
-                # Do not add a new history entry; just continue from the last response
-                st.session_state['history'] = st.session_state['history'][:idx+1]  # Keep the history up to the selected interaction
-                st.rerun()  # Rerun the app to update the chat flow
-
-# Ensure the `key` for the text area is unique, adding a timestamp
-question_key = f"question_input_{time.time()}"
-
-# Text area input with placeholder "Message Botify" without extra label
-question = st.text_area("", 
-                        st.session_state.get('question_input', ''),  # Use session state for preserving input
-                        key=question_key,  # Make the key unique by appending the timestamp
-                        placeholder="Message Botify",  # Placeholder text
-                        height=150)  # Adjust the height as needed
-
-# Add a "Send" button styled with an arrow
-send_button = st.button("Send", key="send_button", help="Click to send your message")
 
 # Ask the question when the "Send" button is pressed
 if send_button:
