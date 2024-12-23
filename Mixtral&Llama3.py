@@ -295,10 +295,10 @@ elif input_method == "Enter Text Manually":
             tts.save("response.mp3")
             st.audio("response.mp3", format="audio/mp3")
 
-# Step 3: Handle Image Upload
+# Step 2: Handle Image Upload and Text Extraction from Image using Gemini 1.5 Flash 8B
 elif input_method == "Upload Image":
     uploaded_image = st.file_uploader("Upload an image file", type=["jpg", "png"])
-    
+
     if uploaded_image:
         st.write("Image uploaded. Extracting text using Gemini 1.5 Flash 8B...")
 
@@ -312,23 +312,31 @@ elif input_method == "Upload Image":
 
         # Send image data to the Gemini model for captioning
         try:
-            # Use the Gemini 1.5 Flash 8B model to generate text from image
+            # Call the Gemini API to extract text from the image
             response = genai.generate_text_from_image(
                 model="gemini-1.5-flash-8b",
                 image=img_byte_arr
             )
+            
+            # Debugging: Print the full response to understand its structure
+            st.write(f"Full response: {response}")  # This will show the entire response from Gemini
 
-            # Extract the caption (text) from the response
-            image_text = response['generated_text']
-            st.success("Text extracted successfully!")
+            # Extract the generated text from the response
+            if 'generated_text' in response:
+                image_text = response['generated_text']
+                st.success("Text extracted successfully!")
 
-            # Display extracted text with adjusted font size
-            with st.expander("View Extracted Text"):
-                st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
+                # Display extracted text with adjusted font size
+                with st.expander("View Extracted Text"):
+                    st.markdown(f"<div style='font-size: 14px;'>{image_text}</div>", unsafe_allow_html=True)
 
-            # Set extracted text as content for further processing
-            content = image_text
+                # Set extracted text as content for further processing
+                content = image_text
+            else:
+                st.error("No text extracted from the image. Please check the image quality.")
+
         except Exception as e:
+            # Error handling: Display any error that occurs during the extraction process
             st.error(f"Error extracting text from image using Gemini: {str(e)}")
 
         # Select a model for translation and Q&A
