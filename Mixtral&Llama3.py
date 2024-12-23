@@ -402,11 +402,13 @@ question = st.text_area("",
 # Add a "Send" button styled with an arrow
 send_button = st.button("Send", key="send_button", help="Click to send your message")
 
-# Function to ask a question about the content
 def ask_question(question):
     if question and 'content' in st.session_state and st.session_state['content']:
         # Track start time for question response
         start_time = time.time()
+
+        # Use only the latest content and not the entire history
+        base_content = st.session_state['content']
 
         # Prepare the request payload for the question
         url = f"{base_url}/chat/completions"
@@ -414,7 +416,7 @@ def ask_question(question):
             "model": selected_model_id,
             "messages": [
                 {"role": "system", "content": "You are a helpful assistant. Use the following content to answer the user's questions."},
-                {"role": "system", "content": st.session_state['content']},  # Use the current content as context
+                {"role": "system", "content": base_content},  # Use initial content as the context
                 {"role": "user", "content": question}
             ],
             "temperature": 0.7,
@@ -425,7 +427,7 @@ def ask_question(question):
         try:
             # Send request to the API
             response = requests.post(url, headers=headers, json=data)
-            
+
             # Track end time for question response
             end_time = time.time()
             response_time = end_time - start_time
@@ -444,7 +446,7 @@ def ask_question(question):
                         "time": current_time,
                         "question": question,
                         "response": answer,
-                        "content_preview": st.session_state['content'][:100] if st.session_state['content'] else "No content available",
+                        "content_preview": base_content[:100] if base_content else "No content available",
                         "response_time": f"{response_time:.2f} seconds"  # Store the response time
                     }
                     if "history" not in st.session_state:
@@ -467,15 +469,13 @@ def ask_question(question):
                         # Display ROUGE scores for the question-answering process
                         st.write(f"ROUGE-1: {rouge1.fmeasure:.4f}, ROUGE-2: {rouge2.fmeasure:.4f}, ROUGE-L: {rougeL.fmeasure:.4f}")
 
-                    # Update content with the latest answer
-                    st.session_state['content'] += f"\n{question}: {answer}"
+                    # Update content with the latest answer, but ensure it doesn't grow indefinitely
+                    st.session_state['content'] = answer  # Update content with the latest answer only
 
             else:
                 st.write(f"Error {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             st.write(f"An error occurred: {e}")
-
-
 # Ask the question when the "Send" button is pressed
 if send_button:
     ask_question(question)
