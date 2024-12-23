@@ -240,6 +240,11 @@ if input_method == "Upload PDF":
         summary = summarize_text(pdf_text, selected_model_id)
         st.write("Summary:")
         st.write(summary)
+        
+        # Convert summary to audio in English (not translated)
+        tts = gTTS(text=summary, lang='en')  # Use English summary for audio
+        tts.save("response.mp3")
+        st.audio("response.mp3", format="audio/mp3")
 
         st.markdown("<hr>", unsafe_allow_html=True)  # Adds a horizontal line
 
@@ -247,11 +252,6 @@ if input_method == "Upload PDF":
         translated_summary = translate_text(summary, selected_language, selected_model_id)
         st.write(f"Translated Summary in {selected_language}:")
         st.write(translated_summary)
-
-        # Convert summary to audio in English (not translated)
-        tts = gTTS(text=summary, lang='en')  # Use English summary for audio
-        tts.save("response.mp3")
-        st.audio("response.mp3", format="audio/mp3")
 
 
 # Step 3: Handle Image Upload
