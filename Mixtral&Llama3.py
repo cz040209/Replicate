@@ -544,3 +544,25 @@ def ask_question(question):
 # Ask the question when the "Send" button is pressed
 if send_button:
     ask_question(question)
+
+
+# Add a "Start New Chat" button to the sidebar or main area
+if st.sidebar.button("Start New Chat"):
+    # Clear all relevant session state data
+    st.session_state['history'] = []  # Clear interaction history
+    st.session_state['content'] = ''  # Clear content
+    st.session_state['pdf_text'] = ''  # Clear PDF text
+    st.session_state['generated_summary'] = ''  # Clear generated summary
+    st.session_state['question_input'] = ''  # Clear the last input question
+    st.session_state['question'] = ''  # Clear the question input
+    st.session_state['uploaded_file'] = None  # Clear uploaded file
+    st.session_state['uploaded_image'] = None  # Clear uploaded image
+    st.session_state['uploaded_audio'] = None  # Clear uploaded audio
+    st.session_state['input_method'] = ''  # Clear selected input method
+    st.session_state['selected_model_id'] = None  # Clear selected model
+
+    # Optionally, reset any other session variables that might be relevant
+    st.sidebar.success("New chat started!")
+    
+    # Rerun the app to refresh the state
+    st.rerun()
