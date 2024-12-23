@@ -17,119 +17,45 @@ hf_token = "hf_rLRfVDnchDCuuaBFeIKTAbrptaNcsHUNM"
 blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
 blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", token=hf_token)
 
-# Custom CSS to style the chat input bar and make it fixed at the bottom, like ChatGPT
+# Custom CSS for a more premium look
 st.markdown("""
     <style>
-        /* Chat container styling */
-        .chat-container {
-            position: relative;
-            padding-bottom: 80px;  /* Space for the chat input at the bottom */
-        }
-
-        /* Chat input bar styling */
-        .chat-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: #2e343d;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0px -2px 5px rgba(0,0,0,0.2);
-            z-index: 10;
-        }
-
-        .chat-bar input {
-            width: 80%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 20px;
-            background-color: #f5f5f5;
-            font-size: 16px;
-            color: #333;
-        }
-
-        .chat-bar button {
-            padding: 10px 20px;
-            margin-left: 10px;
-            background-color: #61dafb;
-            border: none;
-            border-radius: 20px;
+        .css-1d391kg {
+            background-color: #1c1f24;  /* Dark background */
             color: white;
-            font-size: 16px;
-            cursor: pointer;
+            font-family: 'Arial', sans-serif;
         }
-
-        /* Styling for chat history */
-        .chat-history {
-            max-height: 70vh;
-            overflow-y: auto;
-            padding-right: 10px;
-            margin-bottom: 80px;  /* Space for the input bar */
+        .css-1v0m2ju {
+            background-color: #282c34;  /* Slightly lighter background */
         }
-
-        .chat-message {
-            padding: 10px;
+        .css-13ya6yb {
+            background-color: #61dafb;  /* Button color */
             border-radius: 5px;
-            background-color: #333;
+            padding: 10px 20px;
             color: white;
-            margin: 5px 0;
+            font-size: 16px;
+            font-weight: bold;
         }
-
-        .chat-user {
-            background-color: #61dafb;
-            text-align: right;
+        .css-10trblm {
+            font-size: 18px;
+            font-weight: bold;
+            color: #282c34;
         }
-
-        .chat-bot {
-            background-color: #444;
-            text-align: left;
+        .css-3t9iqy {
+            color: #61dafb;
+            font-size: 20px;
         }
-
+        .botify-title {
+            font-family: 'Arial', sans-serif;
+            font-size: 48px;
+            font-weight: bold;
+            color: #61dafb;
+            text-align: center;
+            margin-top: 50px;
+            margin-bottom: 30px;
+        }
     </style>
 """, unsafe_allow_html=True)
-
-# Chat history container with fixed bottom input bar
-with st.container():
-    # Display chat history (messages)
-    if "history" in st.session_state:
-        chat_history = st.session_state.history
-    else:
-        chat_history = []
-        
-    # Chat history display area
-    st.markdown('<div class="chat-history">', unsafe_allow_html=True)
-    for interaction in chat_history:
-        st.markdown(f'<div class="chat-message chat-{interaction["role"]}">{interaction["message"]}</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Chat input bar fixed at the bottom
-    st.markdown('<div class="chat-bar">', unsafe_allow_html=True)
-    question = st.text_input("Ask a question:", key="chat_input", label_visibility="collapsed")
-    send_button = st.button("Send")
-
-    if question and send_button:
-        # Handle the question and response here
-        st.session_state.history.append({
-            "role": "user",
-            "message": question,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        })
-
-        # Placeholder response from the bot (could be an API call to a model)
-        st.session_state.history.append({
-            "role": "bot",
-            "message": "This is where the response from the model will go.",
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        })
-
-        # Clear the input field after sending
-        st.experimental_rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
 
 # Botify Title
 st.markdown('<h1 class="botify-title">Botify</h1>', unsafe_allow_html=True)
